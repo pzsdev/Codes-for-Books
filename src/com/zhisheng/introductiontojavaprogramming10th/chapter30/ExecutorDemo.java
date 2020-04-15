@@ -5,7 +5,7 @@ import java.util.concurrent.Executors;
 
 
 /**
- * 线程池的使用
+ * 30-3 线程池的使用
  */
 public class ExecutorDemo {
     /**
