@@ -1,4 +1,4 @@
-package com.zhisheng.designpatterns.chapter18.version1;
+package com.zhisheng.designpatterns.chapter18strategypattern.version1;
 
 import java.util.Arrays;
 

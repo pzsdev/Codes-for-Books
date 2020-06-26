@@ -1,4 +1,4 @@
-package com.zhisheng.designpatterns.chapter26.version2;
+package com.zhisheng.designpatterns.chapter26statepattern.version2;
 
 public class Context {
     public final static OpenningState openningState = new OpenningState();

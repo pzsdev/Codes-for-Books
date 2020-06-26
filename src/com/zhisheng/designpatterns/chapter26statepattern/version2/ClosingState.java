@@ -1,6 +1,6 @@
-package com.zhisheng.designpatterns.chapter26.version2;
+package com.zhisheng.designpatterns.chapter26statepattern.version2;
 
-public class StoppingState extends LiftState {
+public class ClosingState extends LiftState {
     @Override
     public void open(){
         super.context.setLiftState(Context.openningState);
@@ -9,7 +9,7 @@ public class StoppingState extends LiftState {
 
     @Override
     public void close(){
-        // do nothing
+        System.out.println("电梯门关闭了。。。");
     }
 
     @Override
@@ -20,6 +20,7 @@ public class StoppingState extends LiftState {
 
     @Override
     public void stop(){
-        System.out.println("电梯停止了。。。");
+        super.context.setLiftState(Context.stoppingState);
+        super.context.getLiftState().stop();
     }
 }
