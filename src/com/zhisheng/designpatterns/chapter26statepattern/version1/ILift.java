@@ -1,4 +1,4 @@
-package com.zhisheng.designpatterns.chapter26.version1;
+package com.zhisheng.designpatterns.chapter26statepattern.version1;
 
 /**
  * 电梯接口
