@@ -6,6 +6,9 @@
 
 - [chapter 7, Singleton Pattern](https://github.com/Zhisheng-p/hello-world/tree/master/src/com/zhisheng/designpatterns/chapter7singletonpattern)
 - [chapter 8, Factory Pattern](https://github.com/Zhisheng-p/hello-world/tree/master/src/com/zhisheng/designpatterns/chapter8factorypattern)
+- [chapter 9, Abstract Factory Pattern](https://github.com/Zhisheng-p/hello-world/tree/master/src/com/zhisheng/designpatterns/chapter9abstractfactorypattern)
+- [chapter 10, Template Method Pattern](https://github.com/Zhisheng-p/hello-world/tree/master/src/com/zhisheng/designpatterns/chapter10templatemethodpattern)
+- [chapter 11, Builder Pattern](https://github.com/Zhisheng-p/hello-world/tree/master/src/com/zhisheng/designpatterns/chapter11builderpattern)
 - [chapter 12, Proxy pattern](https://github.com/Zhisheng-p/hello-world/tree/master/src/com/zhisheng/designpatterns/chapter12proxypattern)
 - [chapter 18, Strategy Pattern](https://github.com/Zhisheng-p/hello-world/tree/master/src/com/zhisheng/designpatterns/chapter18strategypattern)
 - [chapter 22, Observer Pattern](https://github.com/Zhisheng-p/hello-world/tree/master/src/com/zhisheng/designpatterns/chapter22observerpattern)
