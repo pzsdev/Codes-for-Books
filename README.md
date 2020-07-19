@@ -12,6 +12,8 @@
 - [chapter 12, Proxy Pattern](https://github.com/Zhisheng-p/hello-world/tree/master/src/com/zhisheng/designpatterns/chapter12proxypattern)
 - [chapter 13, Prototype Pattern](https://github.com/Zhisheng-p/hello-world/tree/master/src/com/zhisheng/designpatterns/chapter13prototypepattern)
 - [chapter 14, Mediator Pattern](https://github.com/Zhisheng-p/hello-world/tree/master/src/com/zhisheng/designpatterns/chapter14mediatorpattern)
+- [chapter 15, Command Pattern](https://github.com/Zhisheng-p/hello-world/tree/master/src/com/zhisheng/designpatterns/chapter15commandpattern)
+- [chapter 16, Chain of Responsibility Pattern](https://github.com/Zhisheng-p/hello-world/tree/master/src/com/zhisheng/designpatterns/chapter16chainofresponsibilitypattern)
 - [chapter 18, Strategy Pattern](https://github.com/Zhisheng-p/hello-world/tree/master/src/com/zhisheng/designpatterns/chapter18strategypattern)
 - [chapter 22, Observer Pattern](https://github.com/Zhisheng-p/hello-world/tree/master/src/com/zhisheng/designpatterns/chapter22observerpattern)
 - [chapter 26, State Pattern](https://github.com/Zhisheng-p/hello-world/tree/master/src/com/zhisheng/designpatterns/chapter26statepattern)
