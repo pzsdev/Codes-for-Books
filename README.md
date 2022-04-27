@@ -1,6 +1,6 @@
 # hello-world
 
->Some demos from some books I'm reading.
+>Demos from some books I'm reading.
 
 ### [The Zen of Design Patterns, 2E](https://github.com/Zhisheng-p/hello-world/tree/master/src/com/zhisheng/designpatterns)
 
