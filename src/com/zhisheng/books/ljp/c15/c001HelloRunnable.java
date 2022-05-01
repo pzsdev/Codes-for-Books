@@ -7,7 +7,7 @@ package com.zhisheng.books.ljp.c15;
  * @Date 2022/4/28 01:15
  * @Version 1.0
  **/
-public class HelloRunnable implements Runnable{
+public class c001HelloRunnable implements Runnable{
     @Override
     public void run() {
         System.out.println("hello runnable");
@@ -35,8 +35,8 @@ public class HelloRunnable implements Runnable{
         System.out.println("the main thread status is " + thread.getState());
 
 
-        HelloRunnable helloRunnable = new HelloRunnable();
-        Thread otherThread = new Thread(helloRunnable);
+        c001HelloRunnable c001HelloRunnable = new c001HelloRunnable();
+        Thread otherThread = new Thread(c001HelloRunnable);
         System.out.println("the current thread status is " + otherThread.getState());
         System.out.println("the current thread isAlive is " + otherThread.isAlive());
         otherThread.start();

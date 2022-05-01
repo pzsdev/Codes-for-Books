@@ -7,7 +7,7 @@ package com.zhisheng.books.ljp.c15;
  * @Date 2022/4/28 01:09
  * @Version 1.0
  **/
-public class HelloThread extends Thread {
+public class c000HelloThread extends Thread {
     @Override
     public void run() {
         System.out.println("hello");
@@ -19,7 +19,7 @@ public class HelloThread extends Thread {
         Thread thread = Thread.currentThread();
         System.out.println("the main thread is " + thread.getName() + ", the id is " + thread.getId());
 
-        Thread helloThread = new HelloThread();
+        Thread helloThread = new c000HelloThread();
         helloThread.start();
     }
 }
