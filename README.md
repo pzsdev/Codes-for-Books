@@ -24,3 +24,7 @@
 ### [Introduction to Java Programming, 10E](https://github.com/Zhisheng-p/hello-world/tree/master/src/com/zhisheng/introductiontojavaprogramming10th)
 
 ### [Linux Command LIne and Shell Scriptiong Bible, 3E](https://github.com/Zhisheng-p/hello-world/tree/master/src/com/zhisheng/linuxcommandlineandshellscriptingbible3e/chapter13)
+
+### [Java 编程的逻辑(The Logic of Java Programming 马昌俊)](https://github.com/pzsdev/Codes-for-Books/tree/master/src/com/zhisheng/books/ljp) 
+
+- [chapter 15 并发基础知识](https://github.com/pzsdev/Codes-for-Books/tree/master/src/com/zhisheng/books/ljp/c15)
