@@ -2,7 +2,8 @@ package com.zhisheng.books.ljp.c15;
 
 /**
  * @ClassName C19AssemblePointDemo
- * @Description TODO
+ * @Description 集合点
+ * 各个线程先是分头行动，各自到达一个集合点，在集合点需要集齐所有线程，交换数据，然后再进行下一步动作
  * @Author pengzhisheng
  * @Date 2022/5/3 04:43
  * @Version 1.0
