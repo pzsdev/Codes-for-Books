@@ -2,7 +2,7 @@
 
 >Demos from some books I'm reading.
 
-### [The Zen of Design Patterns, 2E](https://github.com/Zhisheng-p/hello-world/tree/master/src/com/zhisheng/designpatterns)
+### [设计模式之禅 第二版（The Zen of Design Patterns, 2E）秦小波](https://github.com/Zhisheng-p/hello-world/tree/master/src/com/zhisheng/designpatterns)
 
 - [chapter 7, Singleton Pattern](https://github.com/Zhisheng-p/hello-world/tree/master/src/com/zhisheng/designpatterns/chapter7singletonpattern)
 - [chapter 8, Factory Pattern](https://github.com/Zhisheng-p/hello-world/tree/master/src/com/zhisheng/designpatterns/chapter8factorypattern)
@@ -19,7 +19,7 @@
 - [chapter 22, Observer Pattern](https://github.com/Zhisheng-p/hello-world/tree/master/src/com/zhisheng/designpatterns/chapter22observerpattern)
 - [chapter 26, State Pattern](https://github.com/Zhisheng-p/hello-world/tree/master/src/com/zhisheng/designpatterns/chapter26statepattern)
 
-### [Java 编程的逻辑(The Logic of Java Programming 马昌俊)](https://github.com/pzsdev/Codes-for-Books/tree/master/src/com/zhisheng/books/ljp) 
+### [Java 编程的逻辑（The Logic of Java Programming）马昌俊](https://github.com/pzsdev/Codes-for-Books/tree/master/src/com/zhisheng/books/ljp) 
 
 - [chapter 15 并发基础知识](https://github.com/pzsdev/Codes-for-Books/tree/master/src/com/zhisheng/books/ljp/c15)
 - [chapter 15 并发包的基石](https://github.com/pzsdev/Codes-for-Books/tree/master/src/com/zhisheng/books/ljp/c16)
