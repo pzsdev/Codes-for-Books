@@ -2,6 +2,10 @@ package com.zhisheng.books.ljp.c18;
 
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @ClassName C001TimerFixedDelay
@@ -37,14 +41,23 @@ public class C001TimerFixedDelay {
     }
 
     public static void main(String[] args) throws InterruptedException {
-        Timer timer = new Timer();
+//        Timer timer = new Timer();
+
 //        timer.schedule(new LongRunningTask(), 10);
 //        timer.schedule(new FixedDelayTask(), 100, 1000);
 
         // Timer 固定频率
         // 运行下面两条，第二个任务同样只有在第一个结束后才运行，但它会把之前没有运行的次数补过来，一下子运行 5 次
-        timer.schedule(new LongRunningTask(), 10);
-        System.out.println("fixedDelayTask is start");
-        timer.scheduleAtFixedRate(new FixedDelayTask(), 100, 1000);
+//        timer.schedule(new LongRunningTask(), 10);
+//        System.out.println("fixedDelayTask is start");
+//        timer.scheduleAtFixedRate(new FixedDelayTask(), 100, 1000);
+
+
+        // ScheduledExecutorService
+        // 由于可以有多个线程执行定时任务，一般任务就不会被某个长时间运行的任务所延迟了
+        // 这里两个任务时同时开始，第二个不用等第一个执行完再执行了
+        ScheduledExecutorService timer = Executors.newScheduledThreadPool(10);
+        timer.schedule(new LongRunningTask(), 10, TimeUnit.MILLISECONDS);
+        timer.scheduleWithFixedDelay(new FixedDelayTask(), 100, 1000, TimeUnit.MILLISECONDS);
     }
 }
