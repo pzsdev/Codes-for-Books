@@ -13,10 +13,10 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @Version 1.0
  **/
 public class C000MyCache {
-    private Map<String, Object> map = new HashMap<>();
-    private ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock();
-    private Lock readLock = readWriteLock.readLock();
-    private Lock writeLock = readWriteLock.writeLock();
+    private final Map<String, Object> map = new HashMap<>();
+    private final ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock();
+    private final Lock readLock = readWriteLock.readLock();
+    private final Lock writeLock = readWriteLock.writeLock();
 
     public Object get(String key) {
         readLock.lock();
