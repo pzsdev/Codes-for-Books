@@ -16,5 +16,19 @@ public class C000ClassLoaderDemo {
         }
 
         System.out.println(String.class.getClassLoader());
+
+        System.out.println("--------");
+        // 获取默认的系统类加载器
+        ClassLoader defaultClassLoader = ClassLoader.getSystemClassLoader();
+        System.out.println(defaultClassLoader);
+
+        try {
+            Class<?> cls = defaultClassLoader.loadClass("java.util.ArrayList");
+            // 双亲委派实例，Java 类库 java.util 由 Bootstrap ClassLoader 加载
+            ClassLoader actualLoader = cls.getClassLoader();
+            System.out.println(actualLoader);
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 }
