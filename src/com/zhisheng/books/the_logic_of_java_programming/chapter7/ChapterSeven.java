@@ -1,9 +1,7 @@
 package com.zhisheng.books.the_logic_of_java_programming.chapter7;
 
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Locale;
-import java.util.TimeZone;
+import java.nio.charset.Charset;
+import java.util.*;
 
 /**
  * TODO
@@ -13,14 +11,236 @@ import java.util.TimeZone;
  **/
 public class ChapterSeven {
     public static void main(String[] args) {
-        System.out.println("Chapter Seven");
+//        System.out.println("Chapter Seven");
 
         ChapterSeven chapterSeven = new ChapterSeven();
 //        chapterSeven.date();
 //        chapterSeven.timeZone();
 //        chapterSeven.locale();
-        chapterSeven.calender();
+//        chapterSeven.calender();
+
+//        chapterSeven.integer();
+//        chapterSeven.charsetDemo();
+//        chapterSeven.randomDemo();
+//        chapterSeven.randomPassword();
+//        chapterSeven.randomPassword2();
+//        chapterSeven.poker();
+        chapterSeven.randomWithWeight();
     }
+
+    // 带权重的随机选择
+    /**
+     * 表示选项和权重
+     */
+    class Pair {
+        Object item;
+        int weight;
+        public Pair(Object item, int weight) {
+            this.item = item;
+            this.weight = weight;
+        }
+
+        public Object getItem() {
+            return item;
+        }
+        public int getWeight() {
+            return weight;
+        }
+    }
+
+    class WeightRandom {
+        private Pair[] options;
+        private double[] cumulativeProbabilities;
+        private Random rnd;
+
+        public WeightRandom(Pair[] options) {
+            this.options = options;
+            this.rnd = new Random();
+            prepare();
+        }
+
+        // 计算每个选项的累计概率，保存在 cumulativeProbabilities 中
+        private void prepare() {
+            // 总权重
+            int weights = 0;
+            for (Pair option : options) {
+                weights += option.getWeight();
+            }
+
+            // 累计概率，这个是理解难点
+            this.cumulativeProbabilities = new double[options.length];
+            // 累计权重
+            int sum = 0;
+            for (int i = 0; i < options.length; i++) {
+                sum += options[i].getWeight();
+                this.cumulativeProbabilities[i] = sum / (double)weights;
+            }
+        }
+
+        public Object nextItem() {
+            double rand = rnd.nextDouble();
+            int index = Arrays.binarySearch(cumulativeProbabilities, rand);
+            if (index < 0) {
+                // 没找到，返回结果是 -（插入点） -1，经过下面的转换得到的就是插入点了
+                index = -(index + 1);
+            }
+            return options[index].getItem();
+        }
+    }
+
+    private void randomWithWeight() {
+        Pair[] options = new Pair[]{
+                new Pair("1元", 7), new Pair("2元", 2), new Pair("10元", 1)
+        };
+
+        WeightRandom random = new WeightRandom(options);
+
+        System.out.println(Arrays.toString(random.cumulativeProbabilities));
+        for (int i = 0; i < 10; i++) {
+            System.out.println(random.nextItem());
+        }
+    }
+
+    private void swap(int[] arr, int i, int j) {
+        int temp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = temp;
+    }
+
+    // 从后往前，逐个给每个数组位置重新复制，值是从剩下的元素中随机挑选的
+    private void shuffle(int[] arr) {
+        Random rnd = new Random();
+        for (int i = arr.length; i > 1; i--) {
+            // i-1 表示当前要赋值的位置，rnd.nextInt(i)表示从剩下的元素中随机挑选
+            swap(arr, i - 1, rnd.nextInt(i));
+        }
+    }
+
+    /**
+     * 随机场景-洗牌
+     */
+    private void poker() {
+        int[] arr = new int[13];
+        for (int i = 0; i < arr.length; i++) {
+            arr[i] = i;
+        }
+        shuffle(arr);
+        System.out.println(Arrays.toString(arr));
+    }
+
+
+    // 随机生成一个未赋值的位置
+    // char默认值为’\u0000’是个空格，转化为整数是0
+    private int nextIndex(char[] chars, Random rnd) {
+        int index = rnd.nextInt(chars.length);
+        while (chars[index] != 0) {
+            index = rnd.nextInt(chars.length);
+        }
+        return index;
+    }
+
+    private char nextSpecialChar(Random rnd) {
+        return SPEIAL_CHARS.charAt(rnd.nextInt(SPEIAL_CHARS.length()));
+    }
+
+    private char nextUpperLetter(Random rnd) {
+        return (char) (rnd.nextInt(26) + 'A');
+    }
+
+    private char nextLowerLetter(Random rnd) {
+        return (char) (rnd.nextInt(26) + 'a');
+    }
+
+    private char nextNumLetter(Random rnd) {
+        return (char) (rnd.nextInt(10) + '0');
+    }
+
+    // 随机生成一个8位的字符串，至少包含一个特殊字符，一个大写字符，一个小写字符，一个数字
+    private void randomPassword2() {
+        char[] chars = new char[8];
+        Random rnd = new Random();
+        chars[nextIndex(chars, rnd)] = nextSpecialChar(rnd);
+        chars[nextIndex(chars, rnd)] = nextUpperLetter(rnd);
+        chars[nextIndex(chars, rnd)] = nextLowerLetter(rnd);
+        chars[nextIndex(chars, rnd)] = nextNumLetter(rnd);
+        for (int i = 0; i < 8; i++) {
+            if (chars[i] == 0) {
+                chars[i] = nextChar(rnd);
+            }
+        }
+        System.out.println(new String(chars));
+    }
+
+    // 八位随机密码
+    public void randomPassword() {
+        char[] chars = new char[8];
+        Random rnd = new Random();
+        for (int i = 0; i < 8; i++) {
+            chars[i] = nextChar(rnd);
+        }
+        System.out.println(new String(chars));
+    }
+
+    private static final String SPEIAL_CHARS = "!@#$%^&*()_+";
+    private char nextChar(Random rnd) {
+        switch (rnd.nextInt(4)) {
+            case 0:
+                return SPEIAL_CHARS.charAt(rnd.nextInt(SPEIAL_CHARS.length()));
+            case 1:
+                return (char) (rnd.nextInt(26) + 'a');
+            case 2:
+                return (char) (rnd.nextInt(26) + 'A');
+            default:
+                return (char) (rnd.nextInt(10) + '0');
+        }
+    }
+
+
+    public void randomDemo() {
+        for (int i = 0; i < 3; i++) {
+            System.out.println(Math.random());
+        }
+
+        // 可复现的随机
+        Random random = new Random(12341242341234L);
+        for (int i = 0; i < 3; i++) {
+            System.out.println(random.nextDouble());
+        }
+
+    }
+
+    public void charsetDemo() {
+        // 返回系统默认编码
+        System.out.println(Charset.defaultCharset().name());
+
+        // 返回给定编码名称的Charset对象，其charsetName 名称可以是US-ASCII、ISO-8859-1、windows-1252、GB2312、GBK、GB18030、Big5、UTF-8等
+        Charset charset = Charset.forName("GB18030");
+        System.out.println(charset.name());
+
+    }
+
+    public void integer() {
+        int a = 0x12345678;
+        System.out.println(Integer.toBinaryString(a));
+
+        int r = Integer.reverse(a);
+        System.out.println(Integer.toBinaryString(r));
+
+        int rb = Integer.reverseBytes(a);
+        System.out.println(Integer.toHexString(rb));
+
+        //    10010 00110100 01010110 01111000
+        //000010010 00110100 01010110 01111000
+        //    11110 01101010 00101100 01001000
+        //000011110 01101010 00101100 01001000
+        //78563412
+
+        // 补足 int 的 32 位，就可以看出是前后交换
+        //000010010 00110100 01010110 01111000
+        //000011110 01101010 00101100 01001000
+    }
+
+
 
     /**
      * 7.5 剖析日期与时间
