@@ -269,13 +269,182 @@ public void addAll(DynamicArray<? extends E> c) {
 2）<? extends E>用于实例化类型参数，它用于实例化泛型变量中的类型参数，只是这个具体类型是未知的，只知道它是E或E的某个子类型。
 
 
-
-
 #### 8.3 细节和局限性
 
 ### 第 9 章 列表和队列
 
 #### 9.1 剖析 ArrayList
+##### 9.1.1 基本用法
+##### 9.1.2 基本原理
+基于 Java 8   
+内部一个数组 elementData，一个整数 size 记录实际的元素个数，DEFAULT_CAPACITY = 10。   
+
+无餐构造函数如下，初始化一个空的数组，（在调用 add 方法时，进行扩容）
+```java
+public ArrayList() {
+    this.elementData = DEFAULTCAPACITY_EMPTY_ELEMENTDATA;
+}
+
+// private static final Object[] DEFAULTCAPACITY_EMPTY_ELEMENTDATA = {};
+```
+
+add 方法：
+```java
+public boolean add(E e) {
+    ensureCapacityInternal(size + 1);  // Increments modCount!!
+    elementData[size++] = e;
+    return true;
+}
+```
+
+调用 `ensureCapacityInternal` 确保数组容量是足够的，`ensureCapacityInternal` 代码是：
+```java
+private static int calculateCapacity(Object[] elementData, int minCapacity) {
+    if (elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA) {
+        return Math.max(DEFAULT_CAPACITY, minCapacity);
+    }
+    return minCapacity;
+}
+
+private void ensureCapacityInternal(int minCapacity) {
+    ensureExplicitCapacity(calculateCapacity(elementData, minCapacity));
+}
+
+private void ensureExplicitCapacity(int minCapacity) {
+    modCount++;
+
+    // overflow-conscious code
+    if (minCapacity - elementData.length > 0)
+        grow(minCapacity);
+}
+```
+
+数组扩容：
+```java
+private void grow(int minCapacity) {
+    // overflow-conscious code
+    int oldCapacity = elementData.length;
+    // 右移一位相当于除2，所以 newCapacity 是 oldCapacity 的 1.5 倍
+    int newCapacity = oldCapacity + (oldCapacity >> 1);
+    // 如果拓展的 1.5 倍还小于 minCapacity，就拓展为 minCapacity
+    if (newCapacity - minCapacity < 0)
+        newCapacity = minCapacity;
+    // Java 8 增加
+    if (newCapacity - MAX_ARRAY_SIZE > 0)
+        newCapacity = hugeCapacity(minCapacity);
+    // minCapacity is usually close to size, so this is a win:
+    elementData = Arrays.copyOf(elementData, newCapacity);
+}
+```
+
+
+remove 方法：
+```java
+public E remove(int index) {
+    rangeCheck(index);
+
+    modCount++;
+    E oldValue = elementData(index);
+    
+    // 要移动的元素的个数
+    int numMoved = size - index - 1;
+    if (numMoved > 0)
+        System.arraycopy(elementData, index+1, elementData, index,
+                         numMoved);
+    elementData[--size] = null; // clear to let GC do its work
+
+    return oldValue;
+}
+```
+
+##### 9.1.3 迭代
+
+**1. 迭代器接口**  
+
+ArrayList 实现了 Iterable 接口。
+```java
+// 实现关系
+public class ArrayList<E> extends AbstractList<E>
+        implements List<E>, RandomAccess, Cloneable, java.io.Serializable
+
+public interface List<E> extends Collection<E>
+
+public interface Collection<E> extends Iterable<E>
+
+public interface Iterable<T>
+
+```
+
+```java
+public interface Iterable<T> {
+    Iterator<T> iterator();
+    
+    default void forEach(Consumer<? super T> action) {
+        Objects.requireNonNull(action);
+        for (T t : this) {
+            action.accept(t);
+        }
+    }    
+    
+    default Spliterator<T> spliterator() {
+        return Spliterators.spliteratorUnknownSize(iterator(), 0);
+    }
+}
+```
+
+```java
+public interface Iterator<E> {
+    boolean hasNext();
+
+    E next();
+
+    default void remove() {
+        throw new UnsupportedOperationException("remove");
+    }
+}
+```
+
+**2. ListIterator**   
+
+除了iterator(), ArrayList还提供了两个返回Iterator接口的方法。
+
+ListIterator扩展了Iterator接口，增加了一些方法，向前遍历、添加元素、修改元素、返回索引位置等。
+
+**3. 迭代的陷阱**
+
+关于迭代器，有一种常见的误用，就是在迭代的中间调用容器的删除方法。   
+
+如何避免异常呢？可以使用迭代器的remove方法。   
+
+**4. 迭代器实现的原理**
+
+**5. 迭代器的好处**
+
+为什么要通过迭代器这种方式访问元素呢？
+直接使用size()/get(index)语法不也可以吗？
+在一些场景下，确实没有什么差别，两者都可以。
+不过，foreach语法更为简洁一些，更重要的是，迭代器语法更为通用，它适用于各种容器类。
+
+此外，迭代器表示的是一种**关注点分离**的思想，**将数据的实际组织方式与数据的迭代遍历相分离**，是一种常见的设计模式。
+需要访问容器元素的代码只需要一个Iterator接口的引用，不需要关注数据的实际组织方式，可以使用一致和统一的方式进行访问。
+
+##### 9.1.4 ArrayList 实现的接口
+
+ArrayList还实现了三个主要的接口：Collection、List和Random-Access。
+
+##### 9.1.5 ArrayList 的其他方法
+
+##### 9.1.6 ArrayList 特点分析
+
+作为程序员，就是要理解每种数据结构的特点，根据场合的不同，选择不同的数据结构。
+
+对于ArrayList，它的特点是内部采用动态数组实现，这决定了以下几点。   
+- 1）可以随机访问，按照索引位置进行访问效率很高，用算法描述中的术语，效率是O(1)，简单说就是可以一步到位。   
+- 2）除非数组已排序，否则按照内容查找元素效率比较低，具体是O(N), N为数组内容长度，也就是说，性能与数组长度成正比。   
+- 3）添加元素的效率还可以，重新分配和复制数组的开销被平摊了，具体来说，添加N个元素的效率为O(N)。   
+- 4）插入和删除元素的效率比较低，因为需要移动元素，具体为O(N)。
+
+
 
 #### 9.2 剖析 LinkedList
 
