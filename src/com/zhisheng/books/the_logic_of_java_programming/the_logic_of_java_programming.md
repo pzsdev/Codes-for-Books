@@ -445,8 +445,329 @@ ArrayList还实现了三个主要的接口：Collection、List和Random-Access�
 - 4）插入和删除元素的效率比较低，因为需要移动元素，具体为O(N)。
 
 
-
 #### 9.2 剖析 LinkedList
+LinkedList 除了实现了List接口外，LinkedList还实现了Deque和Queue接口，可以按照队列、栈和双端队列的方式进行操作。
+
+##### 9.2.1 用法
+
+LinkedList与ArrayList一样，同样实现了List接口，而List接口扩展了Collection接口，Collection又扩展了Iterable接口，所有这些接口的方法都是可以使用的。
+
+LinkedList还实现了队列接口Queue，所谓队列就类似于日常生活中的各种排队，特点就是先进先出，在尾部添加元素，从头部删除元素。
+所谓队列就类似于日常生活中的各种排队，特点就是先进先出，在尾部添加元素，从头部删除元素。
+
+```java
+public class LinkedList<E>
+    extends AbstractSequentialList<E>
+    implements List<E>, Deque<E>, Cloneable, java.io.Serializable
+
+public interface Deque<E> extends Queue<E>
+
+public interface Queue<E> extends Collection<E>
+```
+
+```java
+/**
+ * add offer 在尾部添加
+ * remove poll 在头部删除
+ * 
+ * 
+ * @param <E>
+ */
+public interface Queue<E> extends Collection<E> {
+    /**
+     * Inserts the specified element into this queue if it is possible to do so
+     * immediately without violating capacity restrictions, returning
+     * {@code true} upon success and throwing an {@code IllegalStateException}
+     * @param e
+     * @return true
+     */
+    boolean add(E e);
+
+    /**
+     * 
+     * @param e
+     * @return true if the element was added to this queue, else false
+     */
+    boolean offer(E e);
+    
+    /**
+     * Retrieves and removes the head of this queue.  This method differs
+     * from {@link #poll poll} only in that it throws an exception if this
+     * queue is empty.
+     *
+     * @return the head of this queue
+     * @throws NoSuchElementException if this queue is empty
+     */
+    E remove();
+    
+    /**
+     * Retrieves and removes the head of this queue,
+     * or returns {@code null} if this queue is empty.
+     *
+     * @return the head of this queue, or {@code null} if this queue is empty
+     */
+    E poll();
+
+    /**
+     * Retrieves, but does not remove, the head of this queue.  This method
+     * differs from {@link #peek peek} only in that it throws an exception
+     * if this queue is empty.
+     *
+     * @return the head of this queue
+     * @throws NoSuchElementException if this queue is empty
+     */
+    E element();
+    
+    /**
+     * Retrieves, but does not remove, the head of this queue,
+     * or returns {@code null} if this queue is empty.
+     *
+     * @return the head of this queue, or {@code null} if this queue is empty
+     */
+    E peek();
+}
+```
+
+Java中没有单独的栈接口，栈相关方法包括在了表示双端队列的接口Deque中，主要有三个方法：
+```java
+
+public interface Deque<E> extends Queue<E> {
+    /**
+     * Pushes an element onto the stack represented by this deque (in other
+     * words, at the head of this deque) if it is possible to do so
+     * immediately without violating capacity restrictions, throwing an
+     * {@code IllegalStateException} if no space is currently available.
+     *
+     * <p>This method is equivalent to {@link #addFirst}.
+     *
+     * @param e the element to push
+     * @throws IllegalStateException if the element cannot be added at this
+     *         time due to capacity restrictions
+     * @throws ClassCastException if the class of the specified element
+     *         prevents it from being added to this deque
+     * @throws NullPointerException if the specified element is null and this
+     *         deque does not permit null elements
+     * @throws IllegalArgumentException if some property of the specified
+     *         element prevents it from being added to this deque
+     */
+    void push(E e);
+    
+    /**
+     * Pops an element from the stack represented by this deque.  In other
+     * words, removes and returns the first element of this deque.
+     *
+     * <p>This method is equivalent to {@link #removeFirst()}.
+     *
+     * @return the element at the front of this deque (which is the top
+     *         of the stack represented by this deque)
+     * @throws NoSuchElementException if this deque is empty
+     */
+    E pop();
+    
+    /**
+     * Retrieves, but does not remove, the head of the queue represented by
+     * this deque (in other words, the first element of this deque), or
+     * returns {@code null} if this deque is empty.
+     *
+     * <p>This method is equivalent to {@link #peekFirst()}.
+     *
+     * @return the head of the queue represented by this deque, or
+     *         {@code null} if this deque is empty
+     */
+    E peek();
+}
+```
+
+##### 9.2.2 实现原理
+
+**1. 内部组成** 
+
+它的内部实现是双向链表，每个元素在内存都是单独存放的，元素之间通过链接连在一起。
+
+为了表示链接关系，需要一个节点的概念。节点包括实际的元素，但同时有两个链接，分别指向前一个节点（前驱）和后一个节点（后继）。节点是一个内部类，具体定义为：
+
+```java
+private static class Node<E> {
+    E item;
+    Node<E> next;
+    Node<E> prev;
+
+    Node(Node<E> prev, E element, Node<E> next) {
+        this.item = element;
+        this.next = next;
+        this.prev = prev;
+    }
+}
+```
+Node类表示节点，item指向实际的元素，next指向后一个节点，prev指向前一个节点。
+
+LinkedList内部组成就是如下三个实例变量：
+```java
+    transient int size = 0;
+
+    /**
+     * Pointer to first node.
+     * Invariant: (first == null && last == null) ||
+     *            (first.prev == null && first.item != null)
+     */
+    transient Node<E> first;
+
+    /**
+     * Pointer to last node.
+     * Invariant: (first == null && last == null) ||
+     *            (last.next == null && last.item != null)
+     */
+    transient Node<E> last;
+```
+
+size表示链表长度，默认为0, first指向头节点，last指向尾节点，初始值都为null。
+LinkedList的所有public方法内部操作的都是这三个实例变量。
+
+**2. add方法**
+
+```java
+    /**
+     * Appends the specified element to the end of this list.
+     *
+     * <p>This method is equivalent to {@link #addLast}.
+     *
+     * @param e element to be appended to this list
+     * @return {@code true} (as specified by {@link Collection#add})
+     */
+    public boolean add(E e) {
+        linkLast(e);
+        return true;
+    }
+    
+    /**
+     * Links e as last element.
+     */
+    void linkLast(E e) {
+        final Node<E> l = last;
+        final Node<E> newNode = new Node<>(l, e, null);
+        last = newNode;
+        if (l == null)
+            first = newNode;
+        else
+            l.next = newNode;
+        size++;
+        modCount++;
+    }
+```
+
+**3. 根据索引访问元素get**
+
+```java
+    /**
+     * Returns the element at the specified position in this list.
+     *
+     * @param index index of the element to return
+     * @return the element at the specified position in this list
+     * @throws IndexOutOfBoundsException {@inheritDoc}
+     */
+    public E get(int index) {
+        checkElementIndex(index);
+        return node(index).item;
+    }
+
+    private void checkElementIndex(int index) {
+        if (!isElementIndex(index))
+        throw new IndexOutOfBoundsException(outOfBoundsMsg(index));
+    }
+
+    /**
+     * Tells if the argument is the index of an existing element.
+     */
+    private boolean isElementIndex(int index) {
+        return index >= 0 && index < size;
+    }
+    
+    /**
+     * Returns the (non-null) Node at the specified element index.
+     */
+    Node<E> node(int index) {
+        // assert isElementIndex(index);
+
+        if (index < (size >> 1)) {
+            Node<E> x = first;
+            for (int i = 0; i < index; i++)
+                x = x.next;
+            return x;
+        } else {
+            Node<E> x = last;
+            for (int i = size - 1; i > index; i--)
+                x = x.prev;
+            return x;
+        }
+    }
+```
+
+**4. 根据内容查找元素**
+
+**5. 插入元素**
+
+**6. 删除元素**
+
+##### LinkedList 特点分析
+
+用法上，LinkedList是一个List，但也实现了Deque接口，可以作为队列、栈和双端队列使用。  
+实现原理上，LinkedList内部是一个双向链表，并维护了长度、头节点和尾节点，这决定了它有如下特点。
+
+1）按需分配空间，不需要预先分配很多空间。   
+2）不可以随机访问，按照索引位置访问效率比较低，必须从头或尾顺着链接找，效率为O(N/2)。   
+3）不管列表是否已排序，只要是按照内容查找元素，效率都比较低，必须逐个比较，效率为O(N)。   
+4）在两端添加、删除元素的效率很高，为O(1)。   
+5）在中间插入、删除元素，要先定位，效率比较低，为O(N)，但修改本身的效率很高，效率为O(1)。
 
 #### 9.3 剖析 ArrayDeque
 
+LinkedList实现了队列接口Queue和双端队列接口Deque, Java容器类中还有一个双端队列的实现类ArrayDeque，它是基于数组实现的。
+
+ArrayDeque实现了Deque接口，同LinkedList一样，它的队列长度也是没有限制的， Deque扩展了Queue，有队列的所有方法，还可以看作栈，有栈的基本方法push/pop/peek，还有明确的操作两端的方法如addFirst/removeLast等。
+
+##### 9.3.1 实现原理
+
+ArrayDeque内部主要有如下实例变量：
+```java
+public class ArrayDeque<E> extends AbstractCollection<E>
+                           implements Deque<E>, Cloneable, Serializable
+{
+    transient Object[] elements;
+    transient int head;
+    transient int tail;
+}
+```
+
+elements就是存储元素的数组。ArrayDeque的高效来源于head和tail这两个变量，它们使得物理上简单的从头到尾的数组变为了一个逻辑上循环的数组，避免了在头尾操作时的移动。
+
+**1. 循环数组**
+
+**2. 构造方法**
+
+**3. 从尾部添加**
+
+**4. 从头部添加**
+
+**5. 从头部删除**
+
+**6. 检查长度**
+
+**7. 检查给定元素是否存在**
+
+**8. toArray 方法**
+
+**9. 原理小结**
+
+以上就是ArrayDeque的基本原理，内部它是一个动态扩展的循环数组，通过head和tail变量维护数组的开始和结尾，数组长度为2的幂次方，使用高效的位操作进行各种判断，以及对head和tail进行维护。
+
+##### 9.3.2 ArrayDeque 特点分析
+
+ArrayDeque实现了双端队列，内部使用循环数组实现，这决定了它有如下特点。   
+1）在两端添加、删除元素的效率很高，动态扩展需要的内存分配以及数组复制开销可以被平摊，具体来说，添加N个元素的效率为O(N)。   
+2）根据元素内容查找和删除的效率比较低，为O(N)。   
+3）与ArrayList和LinkedList不同，没有索引位置的概念，不能根据索引位置进行操作。   
+
+ArrayDeque和LinkedList都实现了Deque接口，应该用哪一个呢？   
+如果只需要Deque接口，从两端进行操作，一般而言，ArrayDeque效率更高一些，应该被优先使用；如果同时需要根据索引位置进行操作，或者经常需要在中间进行插入和删除，则应该选LinkedList。
+
+无论是ArrayList、LinkedList还是Array-Deque，按内容查找元素的效率都很低，都需要逐个进行比较。
