@@ -771,3 +771,207 @@ ArrayDeque和LinkedList都实现了Deque接口，应该用哪一个呢？
 如果只需要Deque接口，从两端进行操作，一般而言，ArrayDeque效率更高一些，应该被优先使用；如果同时需要根据索引位置进行操作，或者经常需要在中间进行插入和删除，则应该选LinkedList。
 
 无论是ArrayList、LinkedList还是Array-Deque，按内容查找元素的效率都很低，都需要逐个进行比较。
+
+#### 10 Map 和 Set
+
+##### 10.1 剖析 HashMap
+
+```java
+// hashmap.put 方法（Java 8）
+/**
+ * Associates the specified value with the specified key in this map.
+ * If the map previously contained a mapping for the key, the old
+ * value is replaced.
+ *
+ * @param key key with which the specified value is to be associated
+ * @param value value to be associated with the specified key
+ * @return the previous value associated with <tt>key</tt>, or
+ *         <tt>null</tt> if there was no mapping for <tt>key</tt>.
+ *         (A <tt>null</tt> return can also indicate that the map
+ *         previously associated <tt>null</tt> with <tt>key</tt>.)
+ */
+public V put(K key, V value) {
+        return putVal(hash(key), key, value, false, true);
+}
+
+/**
+ * 计算 key 的 hash 值
+ * 
+ * Computes key.hashCode() and spreads (XORs) higher bits of hash
+ * to lower.  Because the table uses power-of-two masking, sets of
+ * hashes that vary only in bits above the current mask will
+ * always collide. (Among known examples are sets of Float keys
+ * holding consecutive whole numbers in small tables.)  So we
+ * apply a transform that spreads the impact of higher bits
+ * downward. There is a tradeoff between speed, utility, and
+ * quality of bit-spreading. Because many common sets of hashes
+ * are already reasonably distributed (so don't benefit from
+ * spreading), and because we use trees to handle large sets of
+ * collisions in bins, we just XOR some shifted bits in the
+ * cheapest possible way to reduce systematic lossage, as well as
+ * to incorporate impact of the highest bits that would otherwise
+ * never be used in index calculations because of table bounds.
+ */
+static final int hash(Object key) {
+        int h;
+        return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
+}
+
+/**
+ * Implements Map.put and related methods.
+ *
+ * @param hash hash for key
+ * @param key the key
+ * @param value the value to put
+ * @param onlyIfAbsent if true, don't change existing value
+ * @param evict if false, the table is in creation mode.
+ * @return previous value, or null if none
+ */
+final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
+        boolean evict) {
+        Node<K,V>[] tab; // 当前 hash 桶
+        Node<K,V> p; // hash 桶中的一个（将要放置元素的）槽位
+        int n, i;
+        
+        // 当前 hash 桶为空的话，初始化 hash 桶，即初始化 HashMap
+        if ((tab = table) == null || (n = tab.length) == 0)
+            n = (tab = resize()).length; // 扩容
+        if ((p = tab[i = (n - 1) & hash]) == null)
+            tab[i] = newNode(hash, key, value, null); // 没有 hash 冲突
+        else { // 有 hash 冲突时，构建链表 或者 升级成树
+            Node<K,V> e;
+            K k;
+            if (p.hash == hash &&
+                ((k = p.key) == key || (key != null && key.equals(k))))
+                e = p; // key 的 hash 相同，覆盖原来的节点
+            else if (p instanceof TreeNode) // 树结构，插入树中
+                e = ((TreeNode<K,V>)p).putTreeVal(this, tab, hash, key, value);
+            else { // 插入链表中
+                for (int binCount = 0; ; ++binCount) {
+                    // next 为空，就到了链表的尾部了
+                    if ((e = p.next) == null) {
+                        // 将当前 key value 做成 node 链接到链表的尾部
+                        p.next = newNode(hash, key, value, null);
+                        // TREEIFY_THRESHOLD = 8， 循环了 8 次，就把链表转成树
+                        if (binCount >= TREEIFY_THRESHOLD - 1) // -1 for 1st
+                            treeifyBin(tab, hash);
+                        break;
+                    }
+                    if (e.hash == hash &&
+                    ((k = e.key) == key || (key != null && key.equals(k))))
+                        break;
+                    p = e;
+                }
+            }
+            if (e != null) { // existing mapping for key
+                V oldValue = e.value;
+                if (!onlyIfAbsent || oldValue == null)
+                    e.value = value;
+                afterNodeAccess(e);
+                return oldValue;
+            }
+        }
+        ++modCount;
+        if (++size > threshold) // 大于临界值，进行扩容
+            resize();
+        afterNodeInsertion(evict);
+        return null;
+}
+
+
+/**
+ * Initializes or doubles table size.  If null, allocates in
+ * accord with initial capacity target held in field threshold.
+ * Otherwise, because we are using power-of-two expansion, the
+ * elements from each bin must either stay at same index, or move
+ * with a power of two offset in the new table.
+ *
+ * @return the table
+ */
+final Node<K,V>[] resize() {
+        Node<K,V>[] oldTab = table; // 旧的 hash 桶，初始化时为 null
+        int oldCap = (oldTab == null) ? 0 : oldTab.length; // 旧桶容量，初始化为 0
+        int oldThr = threshold; // 旧的（可以存放元素桶的）阈值，初始化时为 0
+        int newCap, newThr = 0; // 新的容量，新的阈值
+        
+        if (oldCap > 0) { // 1、旧 hash 桶不为空
+            // static final int MAXIMUM_CAPACITY = 1 << 30;
+            // 旧桶是否大于或等于最大容量
+            if (oldCap >= MAXIMUM_CAPACITY) { 
+                threshold = Integer.MAX_VALUE; // 更新阈值
+                return oldTab;
+            }
+            // 新桶容量等于旧的两倍，同时小于最大容量，同时大于等于默认容量16
+            // static final int DEFAULT_INITIAL_CAPACITY = 1 << 4; // aka 16
+            // newThr 新的阈值也翻倍，12 * 2 = 24
+            else if ((newCap = oldCap << 1) < MAXIMUM_CAPACITY &&
+            oldCap >= DEFAULT_INITIAL_CAPACITY)
+                newThr = oldThr << 1; // double threshold
+        }
+        // 2、oldCap == 0 && oldThr > 0，
+        else if (oldThr > 0) // initial capacity was placed in threshold
+            newCap = oldThr;
+        else {               // zero initial threshold signifies using defaults
+            // 3、oldCap == 0 && oldThr == 0，两个都为 0，就是 hashMap 初始化的时候
+            newCap = DEFAULT_INITIAL_CAPACITY; // 16
+            newThr = (int)(DEFAULT_LOAD_FACTOR * DEFAULT_INITIAL_CAPACITY); // 16 * 0.75 = 12
+        }
+        if (newThr == 0) {
+            float ft = (float)newCap * loadFactor;
+            newThr = (newCap < MAXIMUM_CAPACITY && ft < (float)MAXIMUM_CAPACITY ?
+                (int)ft : Integer.MAX_VALUE);
+        }
+        // 刷新阈值
+        threshold = newThr;
+        // 扩容为一个新的 hash 桶
+        @SuppressWarnings({"rawtypes","unchecked"})
+        Node<K,V>[] newTab = (Node<K,V>[])new Node[newCap];
+        table = newTab;
+        
+        if (oldTab != null) {
+            // 遍历元素
+            for (int j = 0; j < oldCap; ++j) {
+                // 获取每个桶
+                Node<K,V> e; // 桶元素
+                if ((e = oldTab[j]) != null) {
+                    oldTab[j] = null;
+                    if (e.next == null) // 桶中没有元素时
+                        newTab[e.hash & (newCap - 1)] = e;
+                    else if (e instanceof TreeNode) // 桶中元素为树节点时，树节点的 rehashing
+                        ((TreeNode<K,V>)e).split(this, newTab, j, oldCap);
+                    else { // preserve order， 链表的 rehashing
+                        Node<K,V> loHead = null, loTail = null;
+                        Node<K,V> hiHead = null, hiTail = null;
+                        Node<K,V> next;
+                        do {
+                            next = e.next;
+                            if ((e.hash & oldCap) == 0) {
+                                if (loTail == null)
+                                    loHead = e;
+                                else
+                                    loTail.next = e;
+                                loTail = e;
+                            }
+                            else {
+                                if (hiTail == null)
+                                    hiHead = e;
+                                else
+                                    hiTail.next = e;
+                                hiTail = e;
+                            }
+                        } while ((e = next) != null);
+                        if (loTail != null) {
+                            loTail.next = null;
+                            newTab[j] = loHead;
+                        }
+                        if (hiTail != null) {
+                            hiTail.next = null;
+                            newTab[j + oldCap] = hiHead;
+                        }
+                    }
+                }
+            }
+        }
+        return newTab;
+        }
+```
