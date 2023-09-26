@@ -772,9 +772,70 @@ ArrayDeque和LinkedList都实现了Deque接口，应该用哪一个呢？
 
 无论是ArrayList、LinkedList还是Array-Deque，按内容查找元素的效率都很低，都需要逐个进行比较。
 
-#### 10 Map 和 Set
+### 第 10 章 Map 和 Set
 
-##### 10.1 剖析 HashMap
+#### 10.1 剖析 HashMap
+
+##### 10.1.1 Map 接口
+
+##### 10.1.2 HashMap
+
+##### 10.1.3 实现原理
+
+**1. 内部组成**
+
+```java
+// Java 8
+/**
+ * The table, initialized on first use, and resized as
+ * necessary. When allocated, length is always a power of two.
+ * (We also tolerate length zero in some operations to allow
+ * bootstrapping mechanics that are currently not needed.)
+ */
+transient Node<K,V>[] table; // Node 类型数组，成为哈希表或哈希桶，每个元素指向一个单链表，链表中每个节点表示一个键值对
+
+/**
+ * The number of key-value mappings contained in this map.
+ */
+transient int size; // 实际键值对个数
+
+/**
+ * The next size value at which to resize (capacity * load factor).
+ *
+ * @serial
+ */
+        // (The javadoc description is true upon serialization.
+        // Additionally, if the table array has not been allocated, this
+        // field holds the initial array capacity, or zero signifying
+        // DEFAULT_INITIAL_CAPACITY.)
+int threshold; // 阈值，当 size 大于等于 threashold 时考虑进行拓展
+
+/**
+ * The load factor for the hash table.
+ *
+ * @serial
+ */
+final float loadFactor; // 负载因子，默认 0.75
+```
+**2. 默认构造方法**
+
+```java
+// 主要设置 loadFactor 的值
+/**
+ * Constructs an empty <tt>HashMap</tt> with the default initial capacity
+ * (16) and the default load factor (0.75).
+ */
+public HashMap() {
+    this.loadFactor = DEFAULT_LOAD_FACTOR; // all other fields defaulted
+}
+
+/**
+ * The load factor used when none specified in constructor.
+ */
+static final float DEFAULT_LOAD_FACTOR = 0.75f;
+```
+
+**3. 保存键值对**
 
 ```java
 // hashmap.put 方法（Java 8）
@@ -975,3 +1036,51 @@ final Node<K,V>[] resize() {
         return newTab;
         }
 ```
+
+**4. 查找方法**
+
+HashMap支持key为null，key为null的时候，放在table[0]，调用getForNullKey（）获取值。
+
+**5. 根据健删除键值对**
+
+**6. 实现原理小结**
+
+HashMap的用法和实现原理，它实现了Map接口，可以方便地按照键存取值，内部使用数组链表和哈希的方式进行实现。
+
+这决定了它有如下特点：   
+1）根据键保存和获取值的效率都很高，为O(1)，每个单向链表往往只有一个或少数几个节点，根据hash值就可以直接快速定位；   
+2）HashMap中的键值对没有顺序，因为hash值是随机的。  
+
+如果经常需要根据键存取值，而且不要求顺序，那么HashMap就是理想的选择。
+
+#### 10.2 剖析 HashSet
+
+##### 10.2.1 用法
+
+Set表示的是没有重复元素、且不保证顺序的容器接口，它扩展了Collection，但没有定义任何新的方法，不过，对于其中的一些方法，它有自己的规范。
+
+##### 10.2.2 实现原理
+
+HashSet内部是用HashMap实现的，它内部有一个HashMap实例变量。
+```java
+private transient HashMap<E,Object> map;
+```
+
+我们知道，Map有键和值，HashSet相当于只有键，值都是相同的固定值，这个值的定义为:
+```java
+// Dummy value to associate with an Object in the backing Map
+private static final Object PRESENT = new Object();
+```
+
+HashMap中一个键只会保存一份，所以重复添加HashMap不会变化。
+
+##### 10.2.3 小结
+
+本节介绍了HashSet的用法和实现原理，它实现了Set接口，内部实现利用了HashMap，有如下特点：   
+1）没有重复元素；   
+2）可以高效地添加、删除元素、判断元素是否存在，效率都为O(1)；   
+3）没有顺序。
+
+HashSet可以方便高效地实现去重、集合运算等功能。
+
+
