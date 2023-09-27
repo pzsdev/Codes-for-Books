@@ -1,9 +1,6 @@
 package com.zhisheng.books.the_logic_of_java_programming.chapter10;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 /**
  * TODO
@@ -15,19 +12,91 @@ public class ChapterTen {
     public static void main(String[] args) {
         ChapterTen chapterTen = new ChapterTen();
 //        chapterTen.hashMapDemo();
-        chapterTen.hashSetDemo();
+//        chapterTen.hashSetDemo();
+//        chapterTen.treeMapDemo();
+//        chapterTen.treeSetDemo();
+        chapterTen.linkedHashMapDemo();
     }
 
-    private void hashMapDemo() {
-        Random random = new Random();
-        Map<Integer, Integer> countMap = new HashMap<>();
-        for (int i = 0; i < 1000; i++) {
-            int num = random.nextInt(4);
-            Integer count = countMap.get(num);
-            countMap.put(num, count == null ? 1 : count + 1);
+    private void linkedHashMapDemo() {
+        LinkedHashMap<String, Integer> linkedHashMap = new LinkedHashMap<>();
+        linkedHashMap.put("a", 1);
+        linkedHashMap.put("b", 2);
+        linkedHashMap.put("c", 3);
+        linkedHashMap.put("d", 4);
+        linkedHashMap.put("e", 5);
+        linkedHashMap.put("f", 6);
+        linkedHashMap.put("g", 7);
+        linkedHashMap.put("h", 8);
+        linkedHashMap.put("i", 9);
+        linkedHashMap.put("j", 10);
+        linkedHashMap.put("k", 11);
+        linkedHashMap.put("l", 12);
+        linkedHashMap.put("m", 13);
+        linkedHashMap.put("n", 14);
+        linkedHashMap.put("o", 15);
+        linkedHashMap.put("p", 16);
+        linkedHashMap.put("q", 17);
+        linkedHashMap.put("r", 18);
+        linkedHashMap.put("s", 19);
+
+        for (Map.Entry<String, Integer> entry : linkedHashMap.entrySet()) {
+            System.out.println(entry);
         }
 
-        for (Map.Entry<Integer, Integer> entry : countMap.entrySet()) {
+        linkedHashMap.remove("a");
+    }
+
+    private void treeSetDemo() {
+        TreeSet<String> treeSet = new TreeSet<>();
+        treeSet.add("a");
+        treeSet.add("b");
+        treeSet.add("c");
+        treeSet.add("d");
+        treeSet.add("e");
+        treeSet.add("f");
+        treeSet.add("g");
+        treeSet.add("h");
+        treeSet.add("i");
+        treeSet.add("j");
+        treeSet.add("k");
+        treeSet.add("l");
+        treeSet.add("m");
+        treeSet.add("n");
+        treeSet.add("o");
+        treeSet.add("p");
+        treeSet.add("q");
+        treeSet.add("r");
+        treeSet.add("s");
+
+        for (String string : treeSet) {
+            System.out.println(string);
+        }
+    }
+
+    private void treeMapDemo() {
+        TreeMap<String, Integer> treeMap = new TreeMap<>();
+        treeMap.put("a", 1);
+        treeMap.put("b", 2);
+        treeMap.put("c", 3);
+        treeMap.put("d", 4);
+        treeMap.put("e", 5);
+        treeMap.put("f", 6);
+        treeMap.put("g", 7);
+        treeMap.put("h", 8);
+        treeMap.put("i", 9);
+        treeMap.put("j", 10);
+        treeMap.put("k", 11);
+        treeMap.put("l", 12);
+        treeMap.put("m", 13);
+        treeMap.put("n", 14);
+        treeMap.put("o", 15);
+        treeMap.put("p", 16);
+        treeMap.put("q", 17);
+        treeMap.put("r", 18);
+        treeMap.put("s", 19);
+
+        for (Map.Entry<String, Integer> entry : treeMap.entrySet()) {
             System.out.println(entry.getKey() + ":" + entry.getValue());
         }
     }
@@ -44,4 +113,20 @@ public class ChapterTen {
             System.out.println(string);
         }
     }
+
+    private void hashMapDemo() {
+        Random random = new Random();
+        Map<Integer, Integer> countMap = new HashMap<>();
+        for (int i = 0; i < 1000; i++) {
+            int num = random.nextInt(4);
+            Integer count = countMap.get(num);
+            countMap.put(num, count == null ? 1 : count + 1);
+        }
+
+        for (Map.Entry<Integer, Integer> entry : countMap.entrySet()) {
+            System.out.println(entry.getKey() + ":" + entry.getValue());
+        }
+    }
+
+
 }

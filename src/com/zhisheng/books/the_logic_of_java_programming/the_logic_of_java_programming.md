@@ -1083,4 +1083,188 @@ HashMap中一个键只会保存一份，所以重复添加HashMap不会变化。
 
 HashSet可以方便高效地实现去重、集合运算等功能。
 
+#### 10.3 排序二叉树
+
+##### 10.3.1 基本概念
+
+HashMap和HashSet的共同实现机制是哈希表，一个共同的限制是没有顺序，我们提到，它们都有一个能保持顺序的对应类TreeMap和TreeSet，这两个类的共同实现基础是排序二叉树。
+
+先来说树的概念。现实中，树是从下往上长的，树会分叉，在计算机程序中，一般而言，与现实相反，树是从上往下长的，也会分叉，有个根节点，每个节点可以有一个或多个孩子节点，没有孩子节点的节点一般称为叶子节点。   
+
+二叉树是一棵树，每个节点最多有两个孩子节点，一左一右，左边的称为左孩子，右边的称为右孩子。
+
+树有一个高度或深度的概念，是从根到叶子节点经过的节点个数的最大值。
+
+排序二叉树也是二叉树，但它没有重复元素，而且是有序的二叉树。什么顺序呢？对每个节点而言：   
+❑ 如果左子树不为空，则左子树上的所有节点都小于该节点；   
+❑ 如果右子树不为空，则右子树上的所有节点都大于该节点。
+
+##### 10.3.2 基本算法
+
+**1. 查找**
+排序二叉树有一个很好的优点，在其中查找一个元素时很方便、也很高效。
+
+基本步骤为：   
+1）首先与根节点比较，如果相同，就找到了；   
+2）如果小于根节点，则到左子树中递归查找；   
+3）如果大于根节点，则到右子树中递归查找。
+
+**2. 遍历**
+- 递归的方式
+- 按序遍历
+
+**3. 插入**
+
+**4. 删除**
+
+从排序二叉树中删除一个节点要复杂一些，有三种情况：   
+❑ 节点为叶子节点；   
+❑ 节点只有一个孩子节点；   
+❑ 节点有两个孩子节点。
+
+##### 10.3.3 平衡的排序二叉树
+
+排序二叉树的形状与插入和删除的顺序密切相关，极端情况下，排序二叉树可能退化为一个链表。
+
+退化为链表后，排序二叉树的优点就都没有了，即使没有退化为链表，如果排序二叉树高度不平衡，效率也会变得很低。
+
+平衡具体定义是什么呢？有一种高度平衡的定义，即任何节点的左右子树的高度差最多为一。满足这个平衡定义的排序二叉树又被称为AVL树。
+
+在TreeMap的实现中，用的并不是AVL树，而是红黑树，与AVL树类似，红黑树也是一种平衡的排序二叉树，
+也是在插入和删除节点时通过旋转操作来平衡的，但它并不是高度平衡的，而是大致平衡的。
+所谓大致是指，它确保任意一条从根到叶子节点的路径，没有任何一条路径的长度会比其他路径长过两倍。
+红黑树减弱了对平衡的要求，但降低了保持平衡需要的开销，在实际应用中，统计性能高于AVL树。
+
+##### 10.3.4 小结
+
+与哈希表一样，树也是计算机程序中一种重要的数据结构和思维方式。   
+
+为了能够快速操作数据，哈希和树是两种基本的思维方式，不需要顺序，优先考虑哈希，需要顺序，考虑树。   
+
+除了容器类TreeMap/TreeSet，数据库中的索引结构也是基于树的（不过基于B树，而不是二叉树），而索引是能够在大量数据中快速访问数据的关键。
+
+#### 10.4 剖析 TreeMap
+
+##### 10.4.1 基本用法
+
+```java
+// 两个基本的构造方法
+public class TreeMap<K,V>
+    extends AbstractMap<K,V>
+    implements NavigableMap<K,V>, Cloneable, java.io.Serializable
+{
+    /**
+     * Constructs a new, empty tree map, using the natural ordering of its
+     * keys.  All keys inserted into the map must implement the {@link
+     * Comparable} interface.  Furthermore, all such keys must be
+     * <em>mutually comparable</em>: {@code k1.compareTo(k2)} must not throw
+     * a {@code ClassCastException} for any keys {@code k1} and
+     * {@code k2} in the map.  If the user attempts to put a key into the
+     * map that violates this constraint (for example, the user attempts to
+     * put a string key into a map whose keys are integers), the
+     * {@code put(Object key, Object value)} call will throw a
+     * {@code ClassCastException}.
+     */
+    public TreeMap() {
+        comparator = null;
+    }
+
+    /**
+     * Constructs a new, empty tree map, ordered according to the given
+     * comparator.  All keys inserted into the map must be <em>mutually
+     * comparable</em> by the given comparator: {@code comparator.compare(k1,
+     * k2)} must not throw a {@code ClassCastException} for any keys
+     * {@code k1} and {@code k2} in the map.  If the user attempts to put
+     * a key into the map that violates this constraint, the {@code put(Object
+     * key, Object value)} call will throw a
+     * {@code ClassCastException}.
+     *
+     * @param comparator the comparator that will be used to order this map.
+     *        If {@code null}, the {@linkplain Comparable natural
+     *        ordering} of the keys will be used.
+     */
+    public TreeMap(Comparator<? super K> comparator) {
+        this.comparator = comparator;
+    }
+}
+```
+
+TreeMap是按键而不是按值有序，无论哪一种，都是对键而非值进行比较。
+
+##### 10.4.2 实现原理
+
+TreeMap内部是用红黑树实现的，红黑树是一种大致平衡的排序二叉树。
+
+**1. 内部组成**
+
+**2. 保存键值对**
+
+**3. 根据键获取值**
+
+**4. 查看是否包含某个值**
+
+**5. 根据键检出键值对**
+
+##### 10.4.3 小结
+
+本节介绍了TreeMap的用法和实现原理，与HashMap相比，TreeMap同样实现了Map接口，
+但内部使用红黑树实现。
+
+红黑树是统计效率比较高的大致平衡的排序二叉树，这决定了它有如下特点：   
+1）按键有序，TreeMap同样实现了SortedMap和NavigableMap接口，
+可以方便地根据键的顺序进行查找，如第一个、最后一个、某一范围的键、邻近键等。   
+2）为了按键有序，TreeMap要求键实现Comparable接口或通过构造方法提供一个Com-parator对象。   
+3）根据键保存、查找、删除的效率比较高，为O(h), h为树的高度，在树平衡的情况下，h为log2(N),N为节点数。
+
+#### 10.5 剖析 TreeSet
+
+##### 10.5.3 小结
+
+本节介绍了TreeSet的用法和实现原理，在用法方面，它实现了Set接口，
+但有序，在内部实现上，它基于TreeMap实现，而TreeMap基于大致平衡的排序二叉树：
+红黑树，这决定了它有如下特点。   
+1）没有重复元素。   
+2）添加、删除元素、判断元素是否存在，效率比较高，为O(log2(N)), N为元素个数。   
+3）有序，TreeSet同样实现了SortedSet和NavigatableSet接口，
+可以方便地根据顺序进行查找和操作，如第一个、最后一个、某一取值范围、
+某一值的邻近元素等。   
+4）为了有序，TreeSet要求元素实现Comparable接口或通过构造方法提供一个Com-parator对象。
+
+#### 10.6 剖析 LinkedHashMap
+
+##### 10.6.1 基本用法
+
+LinkedHashMap是HashMap的子类，但内部还有一个双向链表维护键值对的顺序，每个键值对既位于哈希表中，也位于这个双向链表中。
+LinkedHashMap支持两种顺序：一种是插入顺序；另外一种是访问顺序。
+
+插入顺序容易理解，先添加的在前面，后添加的在后面，修改操作不影响顺序。
+访问顺序是什么意思呢？所谓访问是指get/put操作，对一个键执行get/put操作后，
+其对应的键值对会移到链表末尾，所以，最末尾的是最近访问的，最开始的最久没被访问的，
+这种顺序就是访问顺序。
+
+LinkedHashMap有5个构造方法，其中4个都是按插入顺序，只有一个构造方法可以指定按访问顺序，如下所示：
+```java
+/**
+ * Constructs an empty <tt>LinkedHashMap</tt> instance with the
+ * specified initial capacity, load factor and ordering mode.
+ *
+ * @param  initialCapacity the initial capacity
+ * @param  loadFactor      the load factor
+ * @param  accessOrder     the ordering mode - <tt>true</tt> for
+ *         access-order, <tt>false</tt> for insertion-order
+ * @throws IllegalArgumentException if the initial capacity is negative
+ *         or the load factor is nonpositive
+ */
+public LinkedHashMap(int initialCapacity,
+                     float loadFactor,
+                     boolean accessOrder) {
+    super(initialCapacity, loadFactor);
+    this.accessOrder = accessOrder;
+}
+```
+
+其中参数accessOrder就是用来指定是否按访问顺序，如果为true，就是访问顺序。
+
+什么时候希望按访问有序呢？一种典型的应用是LRU缓存。
+
 
