@@ -8,10 +8,10 @@
 
 ### 第4章 类的继承
 
-### 4.3 继承实现的基本原理
+#### 4.3 继承实现的基本原理
 本节通过一个例子来介绍继承实现的基本原理。需要说明的是，本节主要从概念上来介绍原理，实际实现细节可能与此不同。
 
-#### 4.3.1 示例
+##### 4.3.1 示例
 > @see ./chapter4
 
 下面是解释一下背后都发生了一些什么事情，从类的加载开始。
@@ -1265,6 +1265,154 @@ public LinkedHashMap(int initialCapacity,
 
 其中参数accessOrder就是用来指定是否按访问顺序，如果为true，就是访问顺序。
 
-什么时候希望按访问有序呢？一种典型的应用是LRU缓存。
+什么时候希望按访问有序呢？一种典型的应用是LRU缓存。具体看代码示例`LRUCache`。
+
+##### 10.6.2 实现原理
+
+先来看内部组成，再看一些主要方法的实现。LinkedHashMap是HashMap的子类，内部增加了如下实例变量：
+```java
+/**
+ * The head (eldest) of the doubly linked list.
+ */
+transient LinkedHashMap.Entry<K,V> head;
+
+/**
+ * The tail (youngest) of the doubly linked list.
+ */
+transient LinkedHashMap.Entry<K,V> tail;
+
+/**
+ * The iteration ordering method for this linked hash map: <tt>true</tt>
+ * for access-order, <tt>false</tt> for insertion-order.
+ *
+ * @serial
+ */
+final boolean accessOrder;
+```
+
+accessOrder表示是按访问顺序还是插入顺序。   
+head表示双向链表的头，它的类型Entry是一个内部类，这个类是HashMap.Entry的子类，增加了两个变量before和after，指向链表中的前驱和后继，Entry的完整定义如下所示：
+```java
+/**
+ * HashMap.Node subclass for normal LinkedHashMap entries.
+ */
+static class Entry<K,V> extends HashMap.Node<K,V> {
+    Entry<K,V> before, after;
+    Entry(int hash, K key, V value, Node<K,V> next) {
+        super(hash, key, value, next);
+    }
+}
+```
+tail表示双向链表的尾节点，它的类型也是 Entry。
+
+LinkedHashMap对HashMap的部分API进行了重写，以此来保证map中元素遍历时的顺序。通过第一部分的一些介绍，其实我们大概才出LinkedHashMap是如何保证顺序的：
+
+1.对于遍历顺序与插入顺序相同的情况，只需要在将元素put到双链表后，维护节点的指针，链入上一次put的节点后面（成为尾结点）；
+
+2.对于遍历顺序与访问顺序相同一致的情况，只需要在get、put、replace..操作之后，将节点移动到末尾即可。
+
+**LinkedHashMap的put**
+
+LinkedHashMap并没有覆盖HashMap的put方法，而是直接沿用HashMap的put方法。
+
+那么LinkedHashMap是如何保证顺序的呢？
+
+是这样的，HashMap在put的时候：
+
+1.如果是新增节点，那么就会创建一个节点，然后放入到map中；
+
+2.如果put操作时修改操作（也就是put的key已经存在），那么不需要创建节点，只需要修改已有节点的value即可；
+
+对于第一种情况，创建节点，是HashMap和LinkedHashMap都有的，LinkedHashMap重写了HashMap创建新节点的方法（newNode和newTreeNode两个方法），在这个时候将新创建的节点加入链表的末尾。
+
+**some post-actions**
+
+由于LinkedHashMap是继承自HashMap，并且大部分的代码都没有做更改，也就是直接沿用HashMap的接口。那么LinkedHashMap是如何保证顺序的呢？特别是前面说的保证插入的顺序，保证访问的顺序？？
+
+其实HashMap的一些API中，比如put方法，其中就包含了一些callback，当插入元素或者查找到元素后，就调用某个方法；这些callback方法在HashMap中没有进行任何操作（方法体为空），留给子类LinkedHashMap进行实现的，如下面所示：
+
+```java
+// Callbacks to allow LinkedHashMap post-actions
+void afterNodeAccess(Node<K,V> p) { }
+void afterNodeInsertion(boolean evict) { }
+void afterNodeRemoval(Node<K,V> p) { }
+```
+
+##### 10.6.3 LinkedHashSet
+
+LinkedHashSet是HashSet的子类，它内部的Map的实现类是LinkedHashMap，所以它也可以保持插入顺序。
+
+##### 10.6.4 小结
+
+本节主要介绍了LinkedHashMap的用法和实现原理，
+用法上，它可以保持插入顺序或访问顺序。插入顺序经常用于处理键值对的数据，
+并保持其输入顺序，也经常用于键已经排好序的场景，相比TreeMap效率更高；
+访问顺序经常用于实现LRU缓存。
+
+实现原理上，它是HashMap的子类，但内部有一个双向链表以维护节点的顺序。
+最后，我们简单介绍了LinkedHashSet，它是HashSet的子类，
+但内部使用LinkedHashMap。
+
+#### 10.7 剖析 EnumMap
+
+##### 10.7.1 基本用法
+
+##### 10.7.2 实现原理
+
+##### 10.7.3 小结
+
+#### 10.8 剖析 EnumSet
+
+EnumSet 的实现与EnumMap没有任何关系，而是用极为精简和高效的位向量实现的。   
+位向量是计算机程序中解决问题的一种常用方式，我们有必要理解和掌握。
+
+EnumSet可以说是处理枚举类型数据的一把利器，在一些应用领域，它非常方便和高效。
+
+##### 10.8.1 基本用法
+
+与TreeSet/HashSet不同，EnumSet是一个抽象类，不能直接通过new新建。
+
+EnumSet提供了若干静态工厂方法，可以创建EnumSet类型的对象。
+
+##### 10.8.2 应用场景
+
+##### 10.8.3 实现原理
+
+EnumSet是使用位向量实现的，什么是位向量呢？   
+就是用一个位表示一个元素的状态，用一组位表示一个集合的状态，每个位对应一个元素，而状态只可能有两种。
+
+EnumSet是一个抽象类，它没有定义使用的向量长度，它有两个子类：RegularEnumSet和JumboEnumSet。   
+RegularEnumSet使用一个long类型的变量作为位向量，long类型的位长度是64，而JumboEnumSet使用一个long类型的数组。
+如果枚举值个数小于等于64，则静态工厂方法中创建的就是RegularEnumSet，如果大于64就是JumboEnumSet。
+
+##### 10.8.4 小结
+
+本节介绍了EnumSet的用法和实现原理，用法上，它是处理枚举类型数据的一把利器，
+简洁方便，实现原理上，它使用位向量，精简高效。
+
+对于只有两种状态，且需要进行集合运算的数据，使用位向量进行表示、
+位运算进行处理，是计算机程序中一种常用的思维方式。
+
+Java中有一个更为通用的可动态扩展长度的位向量容器类BitSet，
+可以方便地对指定位置的位进行操作，与其他位向量进行位运算，
+具体可参看API文档，我们就不介绍了。
+
+### 第 11 章 堆与优先级队列
+
+堆作为一种数据结构可以非常高效方便地嗅觉很多问题，比如：
+
+1）优先级队列，我们之前介绍的队列实现类LinkedList是按添加顺序排列的，
+但现实中，经常需要按优先级来，每次都应该处理当前队列中优先级最高的，
+高优先级的即使来得晚，也应该被优先处理。   
+
+2）求前K个最大的元素，元素个数不确定，数据量可能很大，甚至源源不断到来，
+但需要知道到目前为止的最大的前K个元素。这个问题的变体有：求前K个最小的元素，
+求第K个最大的元素，求第K个最小的元素。   
+
+3）求中值元素，中值不是平均值，而是排序后中间那个元素的值，同样，
+数据量可能很大，甚至源源不断到来。堆还可以实现排序，称之为堆排序，
+不过有比它更好的排序算法，所以，我们就不介绍其在排序中的应用了。
+
+Java容器中有一个类PriorityQueue，表示优先级队列，它实现了堆。
 
 

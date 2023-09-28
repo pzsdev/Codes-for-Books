@@ -15,8 +15,86 @@ public class ChapterTen {
 //        chapterTen.hashSetDemo();
 //        chapterTen.treeMapDemo();
 //        chapterTen.treeSetDemo();
-        chapterTen.linkedHashMapDemo();
+//        chapterTen.linkedHashMapDemo();
+//        chapterTen.lruCacheDemo();
+        chapterTen.enumMapDemo();
     }
+
+    private enum Size {
+        SMALL, MEDIUM, LARGE
+    }
+
+    private class Clothes {
+        String id;
+        Size size;
+
+        public Clothes(String id, Size size) {
+            this.id = id;
+            this.size = size;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public Size getSize() {
+            return size;
+        }
+
+        public void setSize(Size size) {
+            this.size = size;
+        }
+    }
+
+    private void enumMapDemo() {
+        List<Clothes> clothes = Arrays
+                .asList(new Clothes[]{new Clothes("1", Size.SMALL),
+                        new Clothes("2", Size.MEDIUM),
+                        new Clothes("3", Size.LARGE),
+                        new Clothes("4", Size.SMALL),
+                        new Clothes("5", Size.MEDIUM),
+                        new Clothes("6", Size.LARGE)}
+                );
+        System.out.println(countBySize(clothes));
+    }
+
+    private Map<Size, Integer> countBySize(List<Clothes> clothes) {
+        Map<Size, Integer> map = new EnumMap<>(Size.class);
+        for (Clothes c : clothes) {
+            Size size = c.getSize();
+            map.merge(size, 1, Integer::sum);
+        }
+        return map;
+    }
+
+    private void lruCacheDemo() {
+        LRUCache<Object, Object> lruCache = new LRUCache<>(3);
+        lruCache.put("a", 1);
+        lruCache.put("b", 2);
+        lruCache.put("c", 3);
+        lruCache.get("a");
+        lruCache.put("d", 4);
+        System.out.println(lruCache);
+    }
+
+    private class LRUCache<K, V> extends LinkedHashMap<K, V> {
+        private int maxEntries;
+
+        public LRUCache(int maxEntries) {
+            super(16, 0.75f, true);
+            this.maxEntries = maxEntries;
+        }
+
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
+            return size() > maxEntries;
+        }
+    }
+
 
     private void linkedHashMapDemo() {
         LinkedHashMap<String, Integer> linkedHashMap = new LinkedHashMap<>();
