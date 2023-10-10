@@ -13,7 +13,72 @@ public class ChapterEleven {
         ChapterEleven chapterEleven = new ChapterEleven();
 //        chapterEleven.PriorityQueueDemo();
 //        chapterEleven.taskQueueDemo();
-        chapterEleven.topKDemo();
+//        chapterEleven.topKDemo();
+        chapterEleven.getMedian();
+    }
+
+    private void getMedian() {
+        Median<Integer> median = new Median<>();
+        median.add(1);
+        median.add(2);
+        median.add(3);
+        System.out.println(median.getM());
+    }
+
+    /**
+     * 求利用最大堆/最小堆求中值
+     * @param <E>
+     */
+    private class Median<E> {
+        private PriorityQueue<E> minP; // 最小堆
+        private PriorityQueue<E> maxP; // 最大堆
+        private E m; // 中位数
+
+        public Median() {
+            minP = new PriorityQueue<>();
+            maxP = new PriorityQueue<>(11, Collections.reverseOrder());
+        }
+
+        private int compare(E e, E m) {
+            Comparable<? super E> cmpr = (Comparable<? super E>) e;
+            return cmpr.compareTo(m);
+        }
+
+        public void add(E e) {
+            if (m == null) {
+                m = e;
+                return;
+            }
+
+            if (compare(e, m) <= 0) {
+                // 小于中值，加入最大堆
+                maxP.add(e);
+            } else {
+                minP.add(e);
+            }
+
+            if (minP.size() - maxP.size() >= 2) {
+                // 最小堆元素个数多，即大于当前中值的数多
+                // 将 m 加入到最大堆中，然后将最小堆中的根移除赋值给m
+                maxP.add(m);
+                this.m = minP.poll();
+            } else if (maxP.size() - minP.size() >= 2) {
+                // 最大堆元素个数多，即小于当前中值的数多
+                // 将 m 加入到最小堆中，然后将最大堆中的根移除赋值给m
+                minP.add(m);
+                this.m = maxP.poll();
+            }
+        }
+
+        public void addAll(Collection<? extends E> c){
+            for (E e : c) {
+                add(e);
+            }
+        }
+
+        public E getM() {
+            return m;
+        }
     }
 
     private void PriorityQueueDemo() {
