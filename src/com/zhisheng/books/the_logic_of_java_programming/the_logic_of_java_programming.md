@@ -1577,3 +1577,270 @@ PriorityQueue内部是用堆实现的，内部元素不是完全有序的，不�
 然后从元素个数多的堆将根节点移除并赋值给m。
 
 代码实现 ChapterEleven.Median。
+
+## 第四部分 文件
+
+### 第 13 章 文件基本技术
+
+#### 13.1 文件概述
+
+##### 13.1.1 基本概念和常识
+
+**1. 二进制思维**
+
+所有文件，不论是可执行文件、图片文件、视频文件、Word文件、压缩文件、txt文件，
+都没什么可神秘的，它们都是以0和1的二进制形式保存的。
+我们所看到的图片、视频、文本，都是应用程序对这些二进制的解析结果。
+
+**2. 文件类型**
+
+虽然所有数据都是以二进制形式保存的，但为了方便处理数据，高级语言引入了数据类型的概念。
+文件处理也类似，所有文件都是以二进制形式保存的，但为了便于理解和处理文件，文件也有文件类型的概念。
+
+文件类型通常以扩展名的形式体现，每种文件类型都有一定的格式，代表着文件含义和二进制之间的映射关系。
+
+有的文件类型的格式是公开的，有的可能是私有的，我们也可以定义自己私有的文件格式。
+
+文件类型可以粗略分为两类：一类是文本文件；另一类是二进制文件。
+文本文件的例子有普通的文本文件（.txt），程序源代码文件（.java）、HTML文件（.html）等；
+二进制文件的例子有压缩文件（.zip）、PDF文件（.pdf）、MP3文件（.mp3）、Excel文件（.xlsx）等。
+
+**3. 文本文件的编码**
+
+对于文本文件，我们还必须注意文件的编码方式。文本文件中包含的基本都是可打印字符，但字符到二进制的映射（即编码）却有多种方式。
+
+我们需要说明下文本文件的换行符。在Windows系统中，换行符一般是两个字符"\r\n"，
+即ASCII码的13（'\r'）和10（'\n'），在Linux系统中，换行符一般是一个字符"\n"。
+
+**4. 文件系统**
+
+在Java中，通过System.getProperty("user.dir")可以得到运行Java程序的当前目录。
+
+操作系统中有一个临时文件的概念。临时文件位于一个特定目录，比如Windows 7中，临时文件一般位于“C:\Users\用户名\AppData\Local\Temp”; Linux系统中，临时文件位于/tmp。
+
+**5. 文件读写**
+
+文件是放在硬盘上的，程序处理文件需要将文件读入内存，修改后，需要写回硬盘。
+操作系统提供了对文件读写的基本API，不同操作系统的接口和实现是不一样的，
+不过，有一些共同的概念。Java封装了操作系统的功能，提供了统一的API。
+
+一个基本常识是：硬盘的访问延时，相比内存，是很慢的。
+操作系统和硬盘一般是按块批量传输，而不是按字节，以摊销延时开销，块大小一般至少为512字节，
+即使应用程序只需要文件的一个字节，操作系统也会至少将一个块读进来。
+一般而言，应尽量减少接触硬盘，接触一次，就一次多做一些事情。对于网络请求和其他输入输出设备，
+原则都是类似的。
+
+另一个基本常识是：一般读写文件需要两次数据复制，
+比如读文件，需要先从硬盘复制到操作系统内核，再从内核复制到应用程序分配的内存中。
+操作系统运行所在的环境和应用程序是不一样的，操作系统所在的环境是内核态，应用程序是用户态，
+应用程序调用操作系统的功能，需要两次环境的切换，先从用户态切到内核态，再从内核态切到用户态。
+这种用户态/内核态的切换是有开销的，应尽量减少这种切换。
+
+为了提升文件操作的效率，应用程序经常使用一种常见的策略，即使用缓冲区。
+读文件时，即使目前只需要少量内容，但预知还会接着读取，就一次读取比较多的内容，
+放到读缓冲区，下次读取时，如果缓冲区有，就直接从缓冲区读，减少访问操作系统和硬盘。
+写文件时，先写到写缓冲区，写缓冲区满了之后，再一次性调用操作系统写到硬盘。
+不过，需要注意的是，在写结束的时候，要记住将缓冲区的剩余内容同步到硬盘。
+操作系统自身也会使用缓冲区，不过，应用程序更了解读写模式，恰当使用往往可以有更高的效率。
+
+操作系统操作文件一般有打开和关闭的概念。打开文件会在操作系统内核建立一个有关该文件的内存结构，
+这个结构一般通过一个整数索引来引用，这个索引一般称为文件描述符。
+这个结构是消耗内存的，操作系统能同时打开的文件一般也是有限的，在不用文件的时候，
+应该记住关闭文件。关闭文件一般会同步缓冲区内容到硬盘，并释放占据的内存结构。
+
+##### 13.1.2 Java 文件概述
+
+在Java中处理文件有一些基本概念和类，包括流、装饰器设计模式、Reader/Writer、随机读写文件、
+File、NIO、序列化和反序列化。
+
+**1. 流**
+
+在Java中（很多其他语言也类似），文件一般不是单独处理的，
+而是视为输入输出（Input/Output,IO）设备的一种。Java使用基本统一的概念处理所有的IO，
+包括键盘、显示终端、网络等。
+
+这个统一的概念是流，流有输入流和输出流之分。输入流就是可以从中获取数据，
+输入流的实际提供者可以是键盘、文件、网络等；输出流就是可以向其中写入数据，
+输出流的实际目的地可以是显示终端、文件、网络等。
+
+**2. 装饰器设计模式**
+
+基本的流按字节读写，没有缓冲区，这不方便使用。Java解决这个问题的方法是使用装饰器设计模式，
+引入了很多装饰类，对基本的流增加功能，以方便使用。一般一个类只关注一个方面，实际使用时，
+经常会需要多个装饰类。
+
+Java中有很多装饰类，有两个基类：过滤器输入流FilterInputStream和过滤器输出流FilterOutputStream。
+
+**3. Reader/Writer**
+
+以InputStream/OutputStream为基类的流基本都是以二进制形式处理数据的，
+不能够方便地处理文本文件，没有编码的概念，
+能够方便地按字符处理文本数据的基类是Reader和Writer，它也有很多子类。
+
+**4. 随机读写文件**
+
+大部分情况下，使用流或Reader/Writer读写文件内容，
+但Java提供了一个独立的可以随机读写文件的类RandomAccessFile，适用于大小已知的记录组成的文件。
+该类在日常应用开发中用得比较少，但在一些系统程序中用得比较多。
+
+**5. File**
+
+上面介绍的都是操作数据本身，而关于文件路径、文件元数据、文件目录、临时文件、访问权限管理等，
+Java使用File这个类来表示。
+
+**6. NIO**
+
+Java还有一个关于IO操作的包java.nio, nio表示New IO，这个包下同样包含大量的类。
+
+NIO代表一种不同的看待IO的方式，它有缓冲区和通道的概念。
+利用缓冲区和通道往往可以达成和流类似的目的，不过，它们更接近操作系统的概念，
+某些操作的性能也更高。
+
+除了看待方式不同，NIO还支持一些比较底层的功能，
+如内存映射文件、文件加锁、自定义文件系统、非阻塞式IO、异步IO等。
+
+不过，这些功能要么是比较底层，普通应用程序用到得比较少，要么主要适用于网络IO操作。
+
+**7. 序列化和反序列化**
+
+序列化就是将内存中的Java对象持久保存到一个流中，反序列化就是从流中恢复Java对象到内存。
+序列化和反序列化主要有两个用处：一是对象状态持久化，二是网络远程调用，用于传递和返回对象。
+
+Java主要通过接口Serializable和类ObjectInputStream/ObjectOutputStream提供对序列化的支持，
+基本的使用是比较简单的，但也有一些复杂的地方。不过，Java的默认序列化有一些缺点，
+比如，序列化后的形式比较大、浪费空间，序列化/反序列化的性能也比较低，更重要的问题是，
+它是Java特有的技术，不能与其他语言交互。
+
+文件看起来是一件非常简单的事情，但实际却没有那么简单，Java的设计也不是太完美，
+包含了大量的类，这使得对于文件的理解变得困难。
+
+#### 13.2 二进制文件和字节流
+
+以二进制方式读写的主要流有：   
+- InputStream/OutputSteam：基类，抽象类
+- FileInputStream/FileOutputStream：文件
+- ByteArrayInputStream/ByteArrayOutputStream：字节数组
+- DataInputStream/DataOutputStream：装饰类，基本类型和字符串
+- BufferedInputStream/BufferedOutputStream：装饰类，提供缓冲
+
+##### 13.2.1 InputStream/OutputStream
+
+**1. InputStream**
+
+```java
+/**
+ * 看源码注释
+ */
+public abstract class InputStream implements Closeable {
+
+    /**
+     * 一次读一个字节，抽象方法，具体字类实现
+     * @return int 0～255
+     * @throws IOException
+     */
+    public abstract int read() throws IOException;
+
+    /**
+     * 一次读多个字节
+     * @param b
+     * @return int 实际读入的字节个数
+     * @throws IOException
+     */
+    public int read(byte b[]) throws IOException {
+        return read(b, 0, b.length);
+    }
+
+    public int read(byte b[], int off, int len) throws IOException {
+        // ...
+    }
+
+    public long skip(long n) throws IOException {
+        // ...
+    }
+    
+    public int available() throws IOException {
+        return 0;
+    }
+
+    public void close() throws IOException {}
+
+    public synchronized void mark(int readlimit) {}
+
+    public synchronized void reset() throws IOException {
+        throw new IOException("mark/reset not supported");
+    }
+
+    public boolean markSupported() {
+        return false;
+    }
+}
+```
+
+**2. OutputStream**
+
+```java
+public abstract class OutputStream implements Closeable, Flushable {
+    /**
+     * 向流中写入一个字节
+     * @param b 虽然是 int，但只会用到最低的8位
+     * @throws IOException
+     */
+    public abstract void write(int b) throws IOException;
+
+    /**
+     * 批量写入，向流中写入多个字节
+     * @param b
+     * @throws IOException
+     */
+    public void write(byte b[]) throws IOException {
+        write(b, 0, b.length);
+    }
+
+    public void write(byte b[], int off, int len) throws IOException {
+        // ...
+    }
+
+    /**
+     * 调用flush方法没有任何效果，数据只是传递给了操作系统，
+     * 但操作系统什么时候保存到硬盘上，这是不一定的。
+     * @throws IOException
+     */
+    public void flush() throws IOException {
+    }
+
+    public void close() throws IOException {
+    }
+}
+```
+
+##### 13.2.2 FileInputStream/FileOutputStream
+
+**1. FileOutputStream**
+
+```java
+public class FileOutputStream extends OutputStream {
+    
+    public FileOutputStream(String name) throws FileNotFoundException {
+        this(name != null ? new File(name) : null, false);
+    }
+
+    public FileOutputStream(File file, boolean append) throws FileNotFoundException {
+        //...
+    }
+    
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
