@@ -3,6 +3,10 @@ package com.zhisheng.books.the_logic_of_java_programming.chapter13;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * TODO
@@ -15,7 +19,91 @@ public class ChapterThirteenth {
         ChapterThirteenth chapterThirteenth = new ChapterThirteenth();
         chapterThirteenth.fileOutputStreamDemo();
 //        chapterThirteenth.fileInputStreamDemo();
-        chapterThirteenth.byteArrayOutputStreamDemo();
+//        chapterThirteenth.byteArrayOutputStreamDemo();
+//        List<Student> students = Arrays.asList(new Student("张三", 18, 80.9d),
+//                new Student("李四", 17, 67.5d));
+//        chapterThirteenth.dataOutputStreamDemo(students);
+        chapterThirteenth.dataInputStreamDemo();
+    }
+
+    private void dataInputStreamDemo() throws IOException {
+        DataInputStream input = new DataInputStream(new FileInputStream("student.dat"));
+        try {
+            int size = input.readInt();
+            List<Student> students = new ArrayList<>(size);
+            for (int i = 0; i < size; i++) {
+                Student s = new Student();
+                s.setName(input.readUTF());
+                s.setAge(input.readInt());
+                s.setScore(input.readDouble());
+                students.add(s);
+            }
+            System.out.println(students);
+        } finally {
+            input.close();
+        }
+    }
+
+    private void dataOutputStreamDemo(List<Student> studentList) throws IOException {
+        DataOutputStream output = new DataOutputStream(new FileOutputStream("student.dat"));
+        try {
+            output.writeInt(studentList.size());
+            for (Student student : studentList) {
+                output.writeUTF(student.getName());
+                output.writeInt(student.getAge());
+                output.writeDouble(student.getScore());
+            }
+        } finally {
+            output.close();
+        }
+    }
+
+    private static class Student {
+        String name;
+        int age;
+        double score;
+
+        public Student() {
+        }
+
+        public Student(String name, int age, double score) {
+            this.name = name;
+            this.age = age;
+            this.score = score;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public int getAge() {
+            return age;
+        }
+
+        public void setAge(int age) {
+            this.age = age;
+        }
+
+        public double getScore() {
+            return score;
+        }
+
+        public void setScore(double score) {
+            this.score = score;
+        }
+
+        @Override
+        public String toString() {
+            return "Student{" +
+                    "name='" + name + '\'' +
+                    ", age=" + age +
+                    ", score=" + score +
+                    '}';
+        }
     }
 
     private void fileOutputStreamDemo() throws IOException {
@@ -66,4 +154,6 @@ public class ChapterThirteenth {
             input.close();
         }
     }
+
+
 }
