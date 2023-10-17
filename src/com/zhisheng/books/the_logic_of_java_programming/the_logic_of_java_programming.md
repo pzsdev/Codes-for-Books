@@ -1813,7 +1813,23 @@ public abstract class OutputStream implements Closeable, Flushable {
 }
 ```
 
+##### 13.2.2 FileInputStream/FileOutputStream
 
+**1. FileOutputStream**
+
+```java
+public class FileOutputStream extends OutputStream {
+    
+    public FileOutputStream(String name) throws FileNotFoundException {
+        this(name != null ? new File(name) : null, false);
+    }
+
+    public FileOutputStream(File file, boolean append) throws FileNotFoundException {
+        //...
+    }
+    
+}
+```
 
 
 
