@@ -13,9 +13,69 @@ import java.nio.charset.StandardCharsets;
 public class ChapterThirteenth {
     public static void main(String[] args) throws IOException {
         ChapterThirteenth chapterThirteenth = new ChapterThirteenth();
-        chapterThirteenth.fileOutputStreamDemo();
+//        chapterThirteenth.fileOutputStreamDemo();
 //        chapterThirteenth.fileInputStreamDemo();
-        chapterThirteenth.byteArrayOutputStreamDemo();
+//        chapterThirteenth.byteArrayOutputStreamDemo();
+        chapterThirteenth.printUseDir();
+
+    }
+
+    /**
+     * 得到运行Java程序的当前目录
+     */
+    private void printUseDir() {
+        System.out.println(System.getProperty("user.dir"));
+
+        // 获取程序系统属性
+        String propertiesStr = System.getProperties().toString();
+        propertiesStr = propertiesStr.replaceAll(",", ",\n");
+        System.out.println(propertiesStr);
+    }
+
+    /**
+     * 将字节数组写到文件
+     * @param fileName
+     * @param bytes
+     * @throws IOException
+     */
+    private static void writeByteToFile(String fileName, byte[] bytes) throws IOException {
+        OutputStream output = new FileOutputStream(fileName);
+        try {
+            output.write(bytes);
+        } finally {
+            output.close();
+        }
+    }
+
+    /**
+     * 将文件读入字节数组
+     * @param fileName
+     * @return
+     * @throws IOException
+     */
+    private static byte[] readFileToByteArray(String fileName) throws IOException {
+        InputStream input = new FileInputStream(fileName);
+        try {
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            copy(input, output);
+            return output.toByteArray();
+        } finally {
+            input.close();
+        }
+    }
+
+    /**
+     * 复制输入流的内容到输出流
+     * @param input
+     * @param output
+     * @throws IOException
+     */
+    private static void copy(InputStream input, OutputStream output) throws IOException {
+        byte[] buf = new byte[4096];
+        int bytesRead;
+        while ((bytesRead = input.read(buf)) != -1) {
+            output.write(buf, 0, bytesRead);
+        }
     }
 
     private void fileOutputStreamDemo() throws IOException {
