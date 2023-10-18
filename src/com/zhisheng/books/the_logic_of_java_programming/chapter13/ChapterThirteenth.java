@@ -3,10 +3,7 @@ package com.zhisheng.books.the_logic_of_java_programming.chapter13;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * TODO
@@ -26,6 +23,153 @@ public class ChapterThirteenth {
 //        chapterThirteenth.dataOutputStreamDemo(students);
 //        chapterThirteenth.dataInputStreamDemo();
 
+    }
+
+    /**
+     * 按行将文件内容读到一个列表中
+     * @param fileName
+     * @param encoding
+     * @return
+     * @throws IOException
+     */
+    public static List<String> readLinesFromFile(final String fileName, final String encoding) throws IOException {
+        BufferedReader reader = null;
+        try {
+            reader = new BufferedReader(new InputStreamReader(new FileInputStream(fileName), encoding));
+            List<String> lines = new ArrayList<>();
+            String line = reader.readLine();
+            while (line != null) {
+                lines.add(line);
+                line = reader.readLine();
+            }
+            return lines;
+        } finally {
+            if (reader != null) {
+                reader.close();
+            }
+        }
+    }
+
+    /**
+     * 按行将多行数据写到文件
+     * @param fileName
+     * @param encoding
+     * @param lines
+     * @throws IOException
+     */
+    public static void writeLinesToFile(final String fileName, final String encoding, final Collection<?> lines) throws IOException {
+        PrintWriter writer = null;
+        try {
+            writer = new PrintWriter(fileName, encoding);
+            for (Object line : lines) {
+                writer.println(line);
+            }
+        } finally {
+            if (writer != null) {
+                writer.close();
+            }
+        }
+    }
+
+    /**
+     * 将字符串写到文件
+     * @param fileName
+     * @param data
+     * @param encoding
+     * @throws IOException
+     */
+    public static void writerStringToFile(final String fileName, final String data, final String encoding) throws IOException {
+        Writer writer = null;
+        try {
+            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fileName), encoding));
+            writer.write(data);
+        } finally {
+            if (writer != null) {
+                writer.close();
+            }
+        }
+    }
+
+    /**
+     * 读取文件内容到一个字符串
+     * @param fileName
+     * @param encoding
+     * @return
+     * @throws IOException
+     */
+    public static String readFileToString(final String fileName, final String encoding) throws IOException {
+        BufferedReader reader = null;
+        try {
+            reader = new BufferedReader(new InputStreamReader(new FileInputStream(fileName), encoding));
+            StringWriter writer = new StringWriter();
+            copy(reader, writer);
+            return writer.toString();
+        } finally {
+            if (reader != null) {
+                reader.close();
+            }
+        }
+
+    }
+
+    /**
+     * 复制 输入字符流的内容到输出字符流
+     * @param input
+     * @param output
+     * @throws IOException
+     */
+    public static void copy(final Reader input, final Writer output) throws IOException {
+        char[] cbuf = new char[1024];
+        int len;
+        while ((len = input.read(cbuf)) != -1) {
+            output.write(cbuf, 0, len);
+        }
+    }
+
+    /**
+     * 将文件读入字节数组
+     * @param fileName
+     * @return
+     * @throws IOException
+     */
+    private static byte[] readFileToByteArray(String fileName) throws IOException {
+        InputStream input = new FileInputStream(fileName);
+        try {
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            copy(input, output);
+            return output.toByteArray();
+        } finally {
+            input.close();
+        }
+    }
+
+    /**
+     * 复制输入流的内容到输出流
+     * @param input
+     * @param output
+     * @throws IOException
+     */
+    private static void copy(InputStream input, OutputStream output) throws IOException {
+        byte[] buf = new byte[4096];
+        int bytesRead;
+        while ((bytesRead = input.read(buf)) != -1) {
+            output.write(buf, 0, bytesRead);
+        }
+    }
+
+    /**
+     * 将字节数组写到文件
+     * @param fileName
+     * @param bytes
+     * @throws IOException
+     */
+    private static void writeByteToFile(String fileName, byte[] bytes) throws IOException {
+        OutputStream output = new FileOutputStream(fileName);
+        try {
+            output.write(bytes);
+        } finally {
+            output.close();
+        }
     }
 
     private void dataInputStreamDemo() throws IOException {
@@ -72,20 +216,6 @@ public class ChapterThirteenth {
         System.out.println(propertiesStr);
     }
 
-    /**
-     * 将字节数组写到文件
-     * @param fileName
-     * @param bytes
-     * @throws IOException
-     */
-    private static void writeByteToFile(String fileName, byte[] bytes) throws IOException {
-        OutputStream output = new FileOutputStream(fileName);
-        try {
-            output.write(bytes);
-        } finally {
-            output.close();
-        }
-    }
 
     private static class Student {
         String name;
@@ -135,36 +265,7 @@ public class ChapterThirteenth {
         }
     }
 
-    /**
-     * 将文件读入字节数组
-     * @param fileName
-     * @return
-     * @throws IOException
-     */
-    private static byte[] readFileToByteArray(String fileName) throws IOException {
-        InputStream input = new FileInputStream(fileName);
-        try {
-            ByteArrayOutputStream output = new ByteArrayOutputStream();
-            copy(input, output);
-            return output.toByteArray();
-        } finally {
-            input.close();
-        }
-    }
 
-    /**
-     * 复制输入流的内容到输出流
-     * @param input
-     * @param output
-     * @throws IOException
-     */
-    private static void copy(InputStream input, OutputStream output) throws IOException {
-        byte[] buf = new byte[4096];
-        int bytesRead;
-        while ((bytesRead = input.read(buf)) != -1) {
-            output.write(buf, 0, bytesRead);
-        }
-    }
 
     private void fileOutputStreamDemo() throws IOException {
 //        OutputStream output = new FileOutputStream("hello.txt");

@@ -1828,8 +1828,170 @@ public class FileOutputStream extends OutputStream {
         //...
     }
     
+    public FileChannel getChannel() {
+        // ...
+    }
+
+    public final FileDescriptor getFD()  throws IOException {
+        // ...
+    }
+}
+
+```
+
+**2. FileInputStream**
+
+```java
+public class FileInputStream extends InputStream {
+    public FileInputStream(String name) throws FileNotFoundException {
+        // ...
+    }
+
+    public FileInputStream(File file) throws FileNotFoundException {
+        // ...
+    }
+    
 }
 ```
+
+##### 13.2.3 ByteArrayInputStream/ByteArrayOutputStream
+
+**1. ByteArrayOutputStream**
+ByteArrayOutputStream的输出目标是一个byte数组，这个数组的长度是根据数据内容动态扩展的。
+
+**2. ByteArrayInputStream**
+ByteArrayInputStream将byte数组包装为一个输入流，是一种适配器模式。
+
+##### 13.2.4 DataInputStream/DataOutputStream
+
+**1. DataOutputStream**
+
+**2. DataInputStream**
+
+##### 13.2.5 BufferedinputStream/BufferedOutputStream
+
+在使用FileInputStream/FileOutputStream时，应该几乎总是在它的外面包上对应的缓冲类。
+
+##### 13.2.6 使用方法
+
+##### 13.2.7 小结
+
+本节介绍了如何在Java中以二进制字节的方式读写文件，介绍了主要的流。
+
+
+#### 13.3 文本文件和字符流
+
+对于文本文件，字节流没有编码的概念，不能按行处理，使用不太方便，更适合的是使用字符流。
+
+- Reader/Writer：字符流基类，抽象类；
+- InputStreamReader/OutputStreamWriter：适配器类，将字节流转换为字符流；
+- FileReader/FileWriter：目标是文件的字符流；
+- CharArrayReader/CharArrayWriter：目标是 char 数组的字符流；
+- StringReader/StringWriter：目标是 String 的字符流；
+- BufferedReader/BufferedWriter：装饰类，提供缓冲，按行读写功能；
+- PrintWrite：装饰类，可将基本类型和对象转换为其字符串形式输出的类。
+
+类 Scanner。
+
+##### 13.3.1 基本概念
+
+**1. 文本文件**
+
+文本文件和二进制文件的区别。
+
+**2. 编码**
+
+在文本文件中，编码非常重要，同一个字符，不同编码方式对应的二进制形式可能是不一样的。
+
+**3. 字符流**
+
+字节流是按字节读取的，而字符流则是按char读取的，
+一个char在文件中保存的是几个字节与编码有关，但字符流封装了这种细节，
+我们操作的对象就是char。
+
+需要说明的是，一个char不完全等同于一个字符，对于绝大部分字符，一个字符就是一个char，
+但我们之前介绍过，对于增补字符集中的字符，需要两个char表示，对于这种字符，
+Java中的字符流是按char而不是一个完整字符处理的。
+
+##### 13.3.2 Reader/Writer
+
+Reader与字节流的InputStream类似，也是抽象类，部分主要方法有：
+```java
+public int read() throws IOException
+public int read(char cbuf[]) throws IOException
+abstract public void close() throws IOException
+public long skip(long n) throws IOException
+public boolean ready() throws IOException
+```
+方法的名称和含义与InputStream中的对应方法基本类似，但Reader中处理的单位是char，
+比如read读取的是一个char，取值范围为0～65 535。Reader没有available方法，
+对应的方法是ready()。
+
+Writer与字节流的OutputStream类似，也是抽象类，部分主要方法有：
+```java
+public void write(int c)
+public void write(char cbuf[])
+public void write(String str) throws IOException
+abstract public void close() throws IOException;
+abstract public void flush() throws IOException;
+```
+含义与OutputStream的对应方法基本类似，但Writer处理的单位是char, 
+Writer还接受String类型，我们知道，String的内部就是char数组，处理时，
+会调用String的getChar方法先获取char数组。
+
+##### 13.3.3 InputSteramReader/OutputStreamWriter
+
+InputStreamReader和OutputStreamWriter是适配器类，
+能将InputStream/OutputStream转换为Reader/Writer。
+
+**1. OutputStreamReader**
+
+**2. InputStreamWriter**
+
+##### 13.3.4 FileReader/FileWriter
+
+FileReader/FileWriter的输入和目的是文件。
+FileReader是InputStreamReader的子类，FileWriter是OutputStreamWriter的子类。
+
+##### 13.3.5 CharArrayReader/CharArrayWriter
+
+CharArrayWriter与ByteArrayOutputStream类似，它的输出目标是char数组，这个数组的长度可以根据数据内容动态扩展。
+
+##### 13.3.6 StringReader/StringWriter
+
+##### 13.3.7 BufferedReader/BufferedWriter
+
+BufferedReader/BufferedWriter是装饰类，提供缓冲，以及按行读写功能。
+
+##### 13.3.8 PrintWriter
+
+它会将这些参数转换为其字符串形式，即调用String.valueOf()，然后再调用write。
+
+PrintWriter是一个非常方便的类，可以直接指定文件名作为参数，
+可以指定编码类型，可以自动缓冲，可以自动将多种类型转换为字符串，
+在输出到文件时，可以优先选择该类。
+
+##### 13.3.9 Scanner
+
+##### 13.3.10 标准流
+
+我们之前一直在使用System.out向屏幕上输出，它是一个PrintStream对象，
+输出目标就是所谓的“标准”输出，经常是屏幕。
+除了System.out, Java中还有两个标准流：System. in和System.err。
+
+System.in表示标准输入，它是一个InputStream对象，输入源经常是键盘。
+
+##### 13.3.11 实用方法
+
+##### 13.3.12 小结
+
+写文件时，可以优先考虑PrintWriter，因为它使用方便，
+支持自动缓冲、指定编码类型、类型转换等。读文件时，如果需要指定编码类型，
+需要使用InputStreamReader；如果不需要指定编码类型，可使用FileReader，
+但都应该考虑在外面包上缓冲类Buffered-Reader。
+
+通过前面两个小节，我们应该可以从容地读写文件内容了。
+
 
 
 
