@@ -1993,6 +1993,177 @@ System.in表示标准输入，它是一个InputStream对象，输入源经常是
 通过前面两个小节，我们应该可以从容地读写文件内容了。
 
 
+#### 13.4 文件和目录操作
+
+文件和目录操作最终是与操作系统和文件系统相关的，不同系统的实现是不一样的，
+但Java中的java.io.File类提供了统一的接口，
+底层会通过本地方法调用操作系统和文件系统的具体实现。
+
+File类中的操作大概可以分为三类：文件元数据、文件操作、目录操作。
+
+##### 13.4.1 构造方法
+
+File既可以表示文件，也可以表示目录，它的主要构造方法有：
+```java
+//pathname表示完整路径，该路径可以是相对路径，也可以是绝对路径
+public File(String pathname)
+//parent表示父目录，child表示孩子
+public File(String parent, String child)
+public File(File parent, String child)
+```
+File中的路径可以是已经存在的，也可以是不存在的。
+通过new新建一个File对象，不会实际创建一个文件，只是创建一个表示文件或目录的对象，
+new之后，File对象中的路径是不可变的。
+
+##### 13.4.2 文件元数据
+
+文件元数据主要包括文件名和路径、文件基本信息以及一些安全和权限相关的信息。
+文件名和路径相关的主要方法有：
+```java
+public String getName() //返回文件或目录名称，不含路径名
+public boolean isAbsolute() //判断File中的路径是否是绝对路径
+public String getPath() //返回构造File对象时的完整路径名，包括路径和文件名称
+public String getAbsolutePath() //返回完整的绝对路径名
+//返回标准的完整路径名，它会去掉路径中的冗余名称如".", ".."，跟踪软链接(Unix系统概念)等
+public String getCanonicalPath() throws IOException
+public String getParent() //返回父目录路径
+public File getParentFile() //返回父目录的File对象
+//返回一个新的File对象，新的File对象使用getAbsolutePath()的返回值作为参数构造
+public File getAbsoluteFile()
+//返回一个新的File对象，新的File对象使用getCanonicalPath()的返回值作为参数构造
+public File getCanonicalFile() throws IOException
+```
+除了文件名和路径，File对象还有如下方法，以获取文件或目录的基本信息。
+```java
+public boolean exists() //文件或目录是否存在
+public boolean isDirectory() //是否为目录
+public boolean isFile() //是否为文件
+public long length() //文件长度，字节数，对目录没有意义
+public long lastModified() //最后修改时间，从纪元时开始的毫秒数
+public boolean setLastModified(long time) //设置最后修改时间，返回是否修改成功
+```
+
+需要说明的是，File对象没有返回创建时间的方法，因为创建时间不是一个公共概念， Linux/Unix就没有创建时间的概念。
+
+File类中与安全和权限相关的主要方法有：
+```java
+        public boolean isHidden() //是否为隐藏文件
+        public boolean canExecute() //是否可执行
+        public boolean canRead() //是否可读
+        public boolean canWrite() //是否可写
+        public boolean setReadOnly() //设置文件为只读文件
+        //修改文件读权限
+        public boolean setReadable(boolean readable, boolean ownerOnly)
+        public boolean setReadable(boolean readable)
+        //修改文件写权限
+        public boolean setWritable(boolean writable, boolean ownerOnly)
+        public boolean setWritable(boolean writable)
+        //修改文件可执行权限
+        public boolean setExecutable(boolean executable, boolean ownerOnly)
+        public boolean setExecutable(boolean executable)
+```
+在修改方法中，如果修改成功，返回true，否则返回false。
+在设置权限方法中，owner-Only为true表示只针对owner，为false表示针对所有用户，
+没有指定ownerOnly的方法中，ownerOnly相当于是true。
+
+##### 13.4.3 文件操作
+
+文件操作主要有创建、删除、重命名。
+
+新建一个File对象不会实际创建文件，但如下方法可以：
+```java
+        public boolean createNewFile() throws IOException
+```
+创建成功返回true，否则返回false，新创建的文件内容为空。如果文件已存在，不会创建。
+
+File对象还有两个静态方法，可以创建临时文件：
+```java
+public static File createTempFile(String prefix, String suffix)
+        throws IOException
+public static File createTempFile(String prefix, String suffix,
+        File directory) throws IOException
+```
+临时文件的完整路径名是系统指定的、唯一的，
+但可以通过参数指定前缀（prefix）、后缀（suffix）和目录（directory）。
+prefix是必需的，且至少要三个字符；suffix如果为null，则默认为．tmp;
+directory如果不指定或指定为null，则使用系统默认目录。
+
+File类的删除方法为：
+```java
+        public boolean delete()
+        public void deleteOnExit()
+```
+delete删除文件或目录，删除成功返回true，否则返回false。如果File是目录且不为空，
+则delete不会成功，返回false，换句话说，要删除目录，先要删除目录下的所有子目录和文件。
+deleteOnExit将File对象加入到待删列表，在Java虚拟机正常退出的时候进行实际删除。
+
+File类的重命名方法为：
+```java
+        public boolean renameTo(File dest)
+```
+参数dest代表重命名后的文件，重命名能否成功与系统有关，返回值代表是否成功。
+
+##### 13.4.4 目录操作
+
+当File对象代表目录时，可以执行目录相关的操作，如创建、遍历。有两个方法用于创建目录：
+```java
+        public boolean mkdir()
+        public boolean mkdirs()
+```
+
+它们都是创建目录，创建成功返回true，失败返回false。
+需要注意的是，如果目录已存在，返回值是false。
+这两个方法的区别在于：如果某一个中间父目录不存在，则mkdir会失败，返回false，
+而mkdirs则会创建必需的中间父目录。
+
+有如下方法访问一个目录下的子目录和文件：
+```java
+        public String[] list()
+        public String[] list(FilenameFilter filter)
+        public File[] listFiles()
+        public File[] listFiles(FileFilter filter)
+        public File[] listFiles(FilenameFilter filter)
+```
+
+它们返回的都是直接子目录或文件，不会返回子目录下的文件。
+list返回的是文件名数组，而listFiles返回的是File对象数组。
+FilenameFilter和FileFilter都是接口，用于过滤， FileFilter的定义为：
+
+```java
+        public interface FileFilter {
+            boolean accept(File pathname);
+        }
+```
+FilenameFilter的定义为：
+```java
+        public interface FilenameFilter {
+            boolean accept(File dir, String name);
+        }
+```
+在遍历子目录和文件时，针对每个文件，会调用FilenameFilter或FileFilter的accept方法，
+只有accept方法返回true时，才将该子目录或文件包含到返回结果中。
+Filename-Filter和FileFilter的区别在于：
+FileFilter的accept方法参数只有一个File对象，
+而File-nameFilter的accept方法参数有两个，dir表示父目录，name表示子目录或文件名。
+我们来看个例子，列出当前目录下的所有扩展名为．txt的文件，代码可以为：
+
+```java
+        File f = new File(".");
+        File[] files = f.listFiles(new FilenameFilter(){
+            @Override
+            public boolean accept(File dir, String name) {
+                if(name.endsWith(".txt")){
+                    return true;
+                }
+                return false;
+            }
+        });
+```
+
+
+
+
+
 
 
 

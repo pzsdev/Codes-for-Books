@@ -22,7 +22,168 @@ public class ChapterThirteenth {
 //                new Student("李四", 17, 67.5d));
 //        chapterThirteenth.dataOutputStreamDemo(students);
 //        chapterThirteenth.dataInputStreamDemo();
+//        chapterThirteenth.fileDemo();
+//        chapterThirteenth.fileMangeDemo();
+//        chapterThirteenth.fileFilterDemo();
+        chapterThirteenth.getSizeOfDir();
+    }
 
+    /**
+     * 删除非空目录
+     * @param file
+     * @throws IOException
+     */
+    private static void deleteRecursively(File file) throws IOException {
+        if (file.isFile()) {
+            if (!file.delete()) {
+                throw new IOException("Failed to deleted " + file.getCanonicalPath());
+            }
+        } else if (file.isDirectory()) {
+            for (File f : file.listFiles()) {
+                deleteRecursively(f);
+            }
+            if (!file.delete()) {
+                throw new IOException("Failed to deleted " + file.getCanonicalPath());
+            }
+        }
+    }
+
+    /**
+     * 在一个目录下，查找所有给定文件名的文件
+     * @param dir
+     * @param fileName
+     * @return
+     */
+    private static Collection<File> findFile(final File dir, final String fileName) {
+        List<File> files = new ArrayList<>();
+        for (File file : dir.listFiles()) {
+            if (file.isFile() && file.getName().equals(fileName)) {
+                files.add(file);
+            } else if (file.isDirectory()) {
+                files.addAll(findFile(file, fileName));
+            }
+        }
+        return files;
+    }
+
+    private void getSizeOfDir() {
+        long l = ChapterThirteenth.sizeOfDir(new File("/Users/pengzhisheng/git-repository/Codes-for-Books"));
+        System.out.println(l);
+    }
+
+    /**
+     * 计算一个目录下所有文件的大小（包括子目录）
+     * @param dir
+     * @return
+     */
+    private static long sizeOfDir(File dir) {
+        long size = 0;
+        if (dir.isFile()) {
+            return dir.length();
+        } else {
+            for (File file : dir.listFiles()) {
+                if (file.isFile()) {
+                    size += file.length();
+                } else {
+                    size += sizeOfDir(file);
+                }
+            }
+        }
+        return size;
+    }
+
+    private void fileFilterDemo() {
+        File file = new File("/Users/pengzhisheng/git-repository/Codes-for-Books");
+        String[] list = file.list(new FilenameFilter() {
+            @Override
+            public boolean accept(File dir, String name) {
+                if (name.endsWith(".txt")) {
+                    return true;
+                }
+                return false;
+            }
+        });
+
+        System.out.println(Arrays.toString(list));
+    }
+
+    private void fileMangeDemo() throws IOException {
+        File file = new File("hello.txt");
+        System.out.println("create " + file.createNewFile());
+
+        File file1 = new File("helloWorld.txt");
+        System.out.println("create " + file1.createNewFile());
+
+        File helloTemp = File.createTempFile("helloTemp", ".txt");
+        System.out.println("exist " + helloTemp.exists());
+        System.out.println("canonical path " + helloTemp.getCanonicalPath());
+
+        File helloTemp2 = File.createTempFile("helloTemp", null);
+        System.out.println("exist " + helloTemp2.exists());
+        System.out.println("canonical path " + helloTemp2.getCanonicalPath());
+
+        System.out.println("exist " + new File("/private/var/folders/p9/hhkdc1rx7z9_xd04bjsj_hsh0000gn/T/helloTemp5926274146984628250.txt").exists());
+
+        File helloTemp1 = File.createTempFile("helloTemp", ".txt", new File("/Users/pengzhisheng"));
+        System.out.println("exist " + helloTemp1.exists());
+        System.out.println("canonical path " + helloTemp1.getCanonicalPath());
+
+        System.out.println("delete " + helloTemp1.delete());
+        System.out.println("deleteOnExit exec");
+        helloTemp1.deleteOnExit();
+        System.out.println("exist " + helloTemp1.exists());
+
+        System.out.println("rename " + file1.renameTo(new File("helloWorld1.txt")));
+    }
+
+    private void fileDemo () throws IOException {
+        File file = new File("hello.txt");
+//        File file = new File("/Users/pengzhisheng/git-repository/Codes-for-Books/hello.txt");
+//        File file = new File("/Users/pengzhisheng/../pengzhisheng/git-repository/Codes-for-Books/hello.txt");
+        System.out.println("exist " + file.exists());
+        System.out.println("name " + file.getName());
+        System.out.println("path " + file.getPath());// 构造File时的完整路径名
+        System.out.println("is absolute " + file.isAbsolute());
+        System.out.println("absolute path " + file.getAbsolutePath());
+        System.out.println("canonical path " + file.getCanonicalPath()); // 获取绝对路径
+        System.out.println("parent " + file.getParent()); // 构造 File 时的路径上的父路径
+        System.out.println("parent file " + file.getParentFile());
+        System.out.println("absolute file " + file.getAbsoluteFile());
+        System.out.println("canonical file " + file.getCanonicalFile());
+
+        System.out.println("");
+        System.out.println("File separator " + File.separator); // 文件路径分隔符
+        System.out.println("File separator char " + File.separatorChar);
+        System.out.println("Path separator " + File.pathSeparator); // 多个文件路径中的分隔符，例如 PATH 中的分隔符
+        System.out.println("Path separator char " + File.pathSeparatorChar);
+
+        System.out.println("");
+        System.out.println("is directory " + file.isDirectory());
+        System.out.println("is file " + file.isFile());
+        System.out.println("length " + file.length()); // 文件字节数
+        System.out.println("last modified " + new Date(file.lastModified()));
+        System.out.println("set modified " + file.setLastModified(System.currentTimeMillis()));
+        System.out.println("new last modified " + new Date(file.lastModified()));
+
+        // 安全相关
+        System.out.println("");
+        System.out.println("is hidden " + file.isHidden());
+        System.out.println("can read " + file.canRead());
+        System.out.println("can write " + file.canWrite());
+        System.out.println("can execute " + file.canExecute());
+        System.out.println("set readOnly " + file.setReadOnly());
+
+//        System.out.println("update readable " + file.setReadable(true));
+        // ownerOnly 为 true，表示只针对 owner， 为 false，表示针对所有用户
+        System.out.println("update readable " + file.setReadable(true, false));
+        System.out.println("set read " + file.canRead());
+
+        System.out.println("update writable " + file.setWritable(true));
+        System.out.println("set write " + file.canWrite());
+
+        System.out.println("update executable " + file.setExecutable(true));
+        System.out.println("can execute " + file.canExecute());
+        System.out.println("update executable " + file.setExecutable(false));
     }
 
     /**
