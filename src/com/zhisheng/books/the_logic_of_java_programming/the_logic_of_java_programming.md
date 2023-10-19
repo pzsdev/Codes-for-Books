@@ -2160,8 +2160,114 @@ FileFilter的accept方法参数只有一个File对象，
         });
 ```
 
+### 第 14 章 文件高级技术
+
+#### 14.1 常见文件类型处理
+
+- 1、 属性文件：属性文件是常见的配置文件，用于在不改变代码的情况下改变程序的行为。
+- 2、CSV：CSV是Comma-Separated Values的缩写，表示逗号分隔值，
+是一种非常常见的文件类型。大部分日志文件都是CSV, CSV也经常用于交换表格类型的数据， 
+待会我们会看到，CSV看上去很简单，但处理的复杂性经常被低估。
+- 3、Excel：在编程中，经常需要将表格类型的数据导出为Excel格式，以方便用户查看，
+也经常需要接受Excel类型的文件作为输入以批量导入数据。
+- 4、HTML：所有网页都是HTML格式，我们经常需要分析HTML网页，以从中提取感兴趣的信息。
+- 5、压缩文件：压缩文件有多种格式，也有很多压缩工具，大部分情况下，
+我们可以借助工具而不需要自己写程序处理压缩文件，但某些情况下，
+需要自己编程压缩文件或解压缩文件。
+
+##### 14.1.1 属性文件
+
+属性文件一般很简单，一行表示一个属性，属性就是键值对，
+键和值用等号（=）或冒号（:）分隔，一般用于配置程序的一些参数。
+
+在需要连接数据库的程序中，经常使用配置文件配置数据库信息。
+比如，设有文件config.properties，内容大概如下所示：
+```java
+        db.host = 192.168.10.100
+        db.port : 3306
+        db.username = zhangsan
+        db.password = mima1234
+```
+
+处理这种文件使用字符流是比较容易的，
+但Java中有一个专门的类java.util.Properties，它的使用也很简单，
+有如下主要方法：
+
+```java
+        public synchronized void load(InputStream inStream)
+        public String getProperty(String key)
+        public String getProperty(String key, String defaultValue)
+```
+
+load用于从流中加载属性，getProperty用于获取属性值，可以提供一个默认值，
+如果没有找到配置的值，则返回默认值。对于上面的配置文件，
+可以使用类似下面的代码进行读取：
+```java
+        Properties prop = new Properties();
+        prop.load(new FileInputStream("config.properties"));
+        String host = prop.getProperty("db.host");
+        int port = Integer.valueOf(prop.getProperty("db.port", "3306"));
+```
+
+使用类Properties处理属性文件的好处是：   
+- 可以自动处理空格，分隔符=前后的空格会被自动忽略。
+- 可以自动忽略空行。
+- 可以添加注释，以字符#或！开头的行会被视为注释，进行忽略。
+
+使用Properties也有限制，它不能直接处理中文，在配置文件中，
+所有非ASCII字符需要使用Unicode编码。比如，不能在配置文件中直接这么写：
+```java
+        name=老马
+```
+“老马”需要替换为Unicode编码，如下所示：
+```java
+        name=\u8001\u9A6C
+```
+
+在Java IDE（如Eclipse）中，如果使用属性文件编辑器，
+它会自动替换中文为Unicode编码；如果使用其他编辑器，可以先写成中文，
+然后使用JDK提供的命令native2ascii转换为Unicode编码。用法如下例所示：
+```java
+native2ascii -encoding UTF-8 native.properties ascii.properties
+```
+native.properties是输入，其中包含中文；ascii.properties是输出，
+中文替换为了Unicode编码；-encoding指定输入文件的编码，这里指定为了UTF-8。
+
+##### 14.1.2 CSV 文件
+
+第三方库 Apache Commons CSV。
+
+##### 14.1.3 Excel
+
+POI 类库。
+
+Workbook,Sheet,Row,Cell。
+
+##### 14.1.4 HTML
+
+HTML 分析器，jsoup。
+
+##### 14.1.5 压缩文件
+
+Java SDK 支持两种压缩文件：gzip 和 zip，gzip 只能压缩一个文件，而 zip 文件中
+可以包含多个文件。
 
 
+Java API，gzip：
+```java
+        java.util.zip.GZIPOutputStream
+        java.util.zip.GZIPInputStream
+```
+
+zip文件支持一个压缩文件中包含多个文件，Java API中主要的类是：
+```java
+        java.util.zip.ZipOutputStream
+        java.util.zip.ZipInputStream
+```
+
+#### 14.2 随机读写文件
+
+##### 14.2.1 用法
 
 
 
