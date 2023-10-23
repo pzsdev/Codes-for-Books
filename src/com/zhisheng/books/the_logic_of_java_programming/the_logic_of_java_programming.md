@@ -2269,6 +2269,303 @@ zip文件支持一个压缩文件中包含多个文件，Java API中主要的类
 
 ##### 14.2.1 用法
 
+## 第五部分 并发
+
+### 第15章 并发基础知识
+
+#### 15.1 线程的基本概念
+
+##### 15.1.1 创建线程
+
+线程表示一条单独的执行流，它有自己的程序执行计数器，有自己的栈。
+
+在Java中创建线程有两种方式：一种是继承Thread；另外一种是实现Runnable接口。
+
+**1. 继承 Thread**
+
+Java中java.lang.Thread这个类表示线程，一个类可以继承Thread并重写其run方
+法来实现一个线程，如下所示：
+```java
+        public class HelloThread extends Thread {
+              @Override
+            public void run() {
+                  System.out.println("hello");
+            }
+        }
+```
+
+HelloThread这个类继承了Thread，并重写了run方法。
+run方法的方法签名是固定的， public，没有参数，没有返回值，
+不能抛出受检异常。run方法类似于单线程程序中的main方法，
+线程从run方法的第一条语句开始执行直到结束。
+
+定义了这个类不代表代码就会开始执行，线程需要被启动，
+启动需要先创建一个HelloThread对象，然后调用Thread的start方法，如下所示：
+```java
+        public static void main(String[] args) {
+            Thread thread = new HelloThread();
+            thread.start();
+        }
+```
+
+**2. 实现 Runnable 接口**
+
+##### 15.1.2 线程的e基本属性和方法
+
+**1. id 和 name**
+
+**2. 优先级**
+
+**3. 状态**
+
+```java
+        public enum State {
+          NEW,
+          RUNNABLE,
+          BLOCKED,
+          WAITING,
+          TIMED_WAITING,
+          TERMINATED;
+        }
+```
+
+**4. 是否 daemon 线程**
+
+**5. sleep 方法**
+
+Thread有一个静态的sleep方法，调用该方法会让当前线程睡眠指定的时间，单位是毫秒：
+```java
+public static native void sleep(long millis) throws InterruptedException;
+```
+睡眠期间，该线程会让出CPU，但睡眠的时间不一定是确切的给定毫秒数，
+可能有一定的偏差，偏差与系统定时器和操作系统调度器的准确度和精度有关。
+睡眠期间，线程可以被中断，如果被中断，sleep会抛出InterruptedException。
+
+**6. yield 方法**
+
+Thread还有一个让出CPU的方法：
+```java
+public static native void yield();
+```
+这也是一个静态方法，调用该方法，是告诉操作系统的调度器：
+我现在不着急占用CPU，你可以先让其他线程运行。
+不过，这对调度器也仅仅是建议，调度器如何处理是不一定的，它可能完全忽略该调用。
+
+**7. join 方法**
+
+在前面HelloThread的例子中，HelloThread没执行完，main线程可能就执行完了，
+Thread有一个join方法，可以让调用join的线程等待该线程结束，
+join方法的声明为：
+```java
+    public final void join() throws InterruptedException
+```
+在等待线程结束的过程中，这个等待可能被中断，如果被中断，会抛出Interrupted-Exception。
+
+join方法还有一个变体，可以限定等待的最长时间，单位为毫秒，如果为0，表示无期限等待：
+
+```java
+        public final synchronized void join(long millis) throws InterruptedException
+```
+
+在前面HelloThread示例中，如果希望main线程在子线程结束后再退出，main方法可以改为：
+```java
+        public static void main(String[] args) throws InterruptedException {
+            Thread thread = new HelloThread();
+            thread.start();
+            thread.join();
+        }
+```
+
+**8. 过时方法**
+
+Thread类中还有一些看上去可以控制线程生命周期的方法，如：
+```java
+        public final void stop()
+        public final void suspend()
+        public final void resume()
+```
+这些方法因为各种原因已被标记为了过时，我们不应该在程序中使用它们。
+
+##### 15.1.3 共享内存及可能存在的问题
+
+**1. 竞态条件**
+
+所谓竞态条件（race condition）是指，当多个线程访问和操作同一个对象时，
+最终执行结果与执行时序有关，可能正确也可能不正确。
+
+**2. 内存可见性**
+
+Memory Visibility Problem，多个线程可以共享访问和操作相同的变量，但一个线程对一个共享变量的修改，
+另一个线程不一定马上就能看到，甚至永远也看不到。
+
+竞态条件和内存可见性的区别主要有以下几点:
+1. 竞态条件是指多个线程访问同一个共享资源时,由于代码逻辑顺序导致最终结果与期望不一致。内存可见性是指在多线程环境下,一个线程对共享变量的修改可能不会立即被其他线程看到。
+2. 竞态条件是高层次的概念,是多个线程之间访问资源顺序导致的问题。内存可见性是底层的概念,是由于 cpu 缓存机制导致线程间数据传递的延迟。
+3. 解决竞态条件需要用同步机制来控制线程间的执行顺序,如互斥锁、信号量等。解决内存可见性需要使用 volatile、synchronized 等来保证立即刷新变量值。
+4. 竞态条件的问题更多体现在业务逻辑上,如两线程对同一个余额进行操作。内存可见性更关注硬件层次,如 cpu 写缓存还未刷回主存。
+5. 竞态条件可能会引起数据错误或异常。内存可见性主要会出现脏读,一个线程读取到另一个线程尚未完成更新的变量值。
+6. 相同点是它们都出现在多线程共享数据的场景,可能导致线程间的数据传递错误。但侧重点不同,需要合理运用同步机制来解决。
+
+Java 竞态条件 和 内存可见性的区别和联系：   
+竞态条件和内存可见性都与多线程编程中的内存一致性问题有关,但二者有些区别:   
+1. 竞态条件(Race Condition)
+   指多个线程在没有充分同步的情况下访问共享资源,由于代码执行时间和顺序的不确定性,导致程序执行结果出现错误。比如多个线程同时对一个变量进行读写,结果与预期不符。
+2. 内存可见性
+   指在多线程环境下,一个线程对共享变量的修改可能不会立即反映到其他线程中,造成不同线程看到的变量值不一致。这是由于CPU缓存和指令重排序导致。
+   两者的联系:
+   竞态条件的产生与内存可见性问题有关。因为当一个线程的操作没有立即反映到其他线程,就可能引发竞态条件。
+   解决方法:
+- 使用同步机制(synchronized,锁)来防止竞态条件
+- 使用volatile关键字或原子类来保证内存可见性
+  所以可以说,内存可见性问题是导致竞态条件的原因之一,使用同步、volatile等可以既解决内存可见性问题,
+也能防止竞态条件。两者有关联但不完全等同。
+
+##### 15.1.4 线程的优点及成本
+
+为什么要创建单独的执行流？或者说线程有什么优点呢？至少有以下几点：
+
+1）充分利用多CPU的计算能力，单线程只能利用一个CPU，使用多线程可以利用多CPU的计算能力。   
+2）充分利用硬件资源，CPU和硬盘、网络是可以同时工作的，一个线程在等待网络IO的同时，
+另一个线程完全可以利用CPU，对于多个独立的网络请求，完全可以使用多个线程同时请求。   
+3）在用户界面（GUI）应用程序中，保持程序的响应性，界面和后台任务通常是不同的线程，否则，
+如果所有事情都是一个线程来执行，当执行一个很慢的任务时，整个界面将停止响应，也无法取消该任务。   
+4）简化建模及IO处理，比如，在服务器应用程序中，对每个用户请求使用一个单独的线程进行处理，
+相比使用一个线程，处理来自各种用户的各种请求，以及各种网络和文件IO事件，建模和编写程序要容易得多。
+
+#### 15.2 理解 synchronized
+
+##### 15.2.1 用法和基本原理
+
+synchronized可以用于修饰类的`实例方法`、`静态方法`和`代码块`（代码块一般都在一个方法内部）。
+
+**1. 实例方法**
+
+synchronized实例方法实际保护的是同一个对象的方法调用，确保同时只能有一个线程执行。
+再具体来说，synchronized实例方法保护的是当前实例对象，即this, this对象有一个锁和一个等待队列，
+锁只能被一个线程持有，其他试图获得同样锁的线程需要等待。
+
+执行synchronized实例方法的过程大致如下：   
+1）尝试获得锁，如果能够获得锁，继续下一步，否则加入等待队列，阻塞并等待唤醒。   
+2）执行实例方法体代码。   
+3）释放锁，如果等待队列上有等待的线程，从中取一个并唤醒， 如果有多个等待的线程，
+唤醒哪一个是不一定的，不保证公平性。
+
+当前线程不能获得锁的时候，它会加入等待队列等待，线程的状态会变为BLOCKED。
+
+我们再强调下，synchronized保护的是对象而非代码，只要访问的是同一个对象的synchronized方法，
+即使是不同的代码，也会被同步顺序访问。比如，对于Counter中的两个实例方法getCount和incr，
+对同一个Counter对象，一个线程执行getCount，另一个执行incr，它们是不能同时执行的，
+会被synchronized同步顺序执行。
+
+一般在保护变量时，需要在所有访问该变量的方法上加上synchronized。
+
+**2. 静态方法**
+
+synchronized同样可以用于静态方法，如代码清单15-6所示。
+```java
+public class StaticCounter {
+    private static int count = 0;
+    public static synchronized void incr() {
+        count++;
+    }
+    public static synchronized int getCount() {
+        return count;
+    }
+}
+```
+
+synchronized保护的是对象，对实例方法，保护的是当前实例对象this，对静态方法，
+保护的是哪个对象呢？是类对象，这里是StaticCounter.class。
+实际上，每个对象都有一个锁和一个等待队列，类对象也不例外。
+
+**3. 代码块**
+
+除了用于修饰方法外，synchronized还可以用于包装代码块。
+
+```java
+        public class Counter {
+            private int count;
+            public void incr(){
+                synchronized(this){
+                    count ++;
+                }
+            }
+            public int getCount() {
+                synchronized(this){
+                    return count;
+                }
+            }
+        }
+```
+synchronized括号里面的就是保护的对象，对于实例方法，就是this, {}里面是同步执行的代码。
+
+```java
+        public class StaticCounter {
+            private static int count = 0;
+            public static void incr() {
+                synchronized(StaticCounter.class){
+                    count++;
+                }
+            }
+            public static int getCount() {
+                synchronized(StaticCounter.class){
+                    return count;
+                }
+            }
+        }
+```
+synchronized同步的对象可以是任意对象，任意对象都有一个锁和等待队列，或者说，任何对象都可以作为锁对象。
+
+##### 15.2.2 进一步理解 synchronized
+
+**1. 可重入性**
+
+synchronized有一个重要的特征，它是可重入的，也就是说，对同一个执行线程，它在获得了锁之后，
+在调用其他需要同样锁的代码时，可以直接调用。
+
+可重入是通过记录锁的持有线程和持有数量来实现的，当调用被synchronized保护的代码时，
+检查对象是否已被锁，如果是，再检查是否被当前线程锁定，如果是，增加持有数量，
+如果不是被当前线程锁定，才加入等待队列，当释放锁时，减少持有数量，当数量变为0时才释放整个锁。
+
+**2. 内存可见性**
+
+synchronized除了保证原子操作外，它还有一个重要的作用，就是保证内存可见性，在释放锁时，
+所有写入都会写回内存，而获得锁后，都会从内存中读最新数据。
+
+**3. 死锁**
+
+使用synchronized或者其他锁，要注意死锁。
+所谓死锁就是类似这种现象，比如，有a、b两个线程，a持有锁A，在等待锁B，而b持有锁B，在等待锁A, 
+a和b陷入了互相等待，最后谁都执行不下去。
+
+应该尽量避免在持有一个锁的同时去申请另一个锁，如果确实需要多个锁，
+所有代码都应该按照相同的顺序去申请锁。
+
+还可以借助 jstack 命令发现死锁。
+
+##### 15.2.3 同步容器及其注意事项
+
+类Collection中有一些方法，可以返回线程安全的同步容器。
+
+加了synchronized，所有方法调用变成了原子操作，客户端在调用时，是不是就绝对安全了呢？
+不是的，至少有以下情况需要注意：
+
+**1. 复合操作，比如先检查再更新**
+
+**2. 伪同步**   
+  同步错对象了。
+
+**3. 迭代**
+
+**4. 并发容器**
+
+除了以上这些注意事项，同步容器的性能也是比较低的，当并发访问量比较大的时候性能比较差。
+所幸的是，Java中还有很多专为并发设计的容器类，比如：
+
+- CopyOnWriteArrayList。
+- ConcurrentHashMap。
+- ConcurrentLinkedQueue。
+- ConcurrentSkipListSet。
 
 
 
