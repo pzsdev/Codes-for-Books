@@ -2272,7 +2272,7 @@ zip文件支持一个压缩文件中包含多个文件，Java API中主要的类
 
 ## 第五部分 并发
 
-### 第15章 并发基础知识
+### 第 15 章 并发基础知识
 
 #### 15.1 线程的基本概念
 
@@ -2750,11 +2750,11 @@ Java中没有并发版的HashSet，但可以通过Collections.newSetFromMap方�
 
 任务执行服务涉及的基本接口：
 
-- Runnable和Callable：表示要执行的异步任务。
-- Executor和ExecutorService：表示执行服务。
+- Runnable 和 Callable：表示要执行的异步任务。
+- Executor 和 ExecutorService：表示执行服务。
 - Future：表示异步任务的结果。
 
-Executor表示最简单的执行服务，其定义为：
+Executor 表示最简单的执行服务，其定义为：
 
 ```Java
         public interface Executor {
@@ -2764,7 +2764,7 @@ Executor表示最简单的执行服务，其定义为：
 
 
 
-ExecutorService扩展了Executor，定义了更多服务，基本方法有：
+ExecutorService 扩展了 Executor，定义了更多服务，基本方法有：
 
 ```Java
         public interface ExecutorService extends Executor {
@@ -2775,7 +2775,7 @@ ExecutorService扩展了Executor，定义了更多服务，基本方法有：
         }
 ```
 
-这三个submit都表示提交一个任务，返回值类型都是Future，返回后，只是表示任务已提交，不代表已执行，通过Future可以查询异步任务的状态、获取最终结果、取消任务等。
+这三个 submit 都表示提交一个任务，返回值类型都是 Future，返回后，只是表示任务已提交，不代表已执行，通过Future可以查询异步任务的状态、获取最终结果、取消任务等。
 
 
 
@@ -2792,33 +2792,639 @@ Future接口的定义：
         }
 ```
 
-get用于返回异步任务最终的结果，如果任务还未执行完成，会阻塞等待，另一个get方法可以限定阻塞等待的时间，如果超时任务还未结束，会抛出TimeoutException。
+get 用于返回异步任务最终的结果，如果任务还未执行完成，会阻塞等待，另一个 get 方法可以限定阻塞等待的时间，如果超时任务还未结束，会抛出 TimeoutException。
 
 
 
-我们再来看下get方法，任务最终大概有三种结果：
+我们再来看下 get 方法，任务最终大概有三种结果：
 
-1）正常完成，get方法会返回其执行结果，如果任务是Runnable且没有提供结果，返回null。
+1）正常完成，get 方法会返回其执行结果，如果任务是 Runnable 且没有提供结果，返回null。
 
-2）任务执行抛出了异常，get方法会将异常包装为ExecutionException重新抛出，通过异常的getCause方法可以获取原异常。
+2）任务执行抛出了异常，get 方法会将异常包装为 ExecutionException 重新抛出，通过异常的 getCause 方法可以获取原异常。
 
-3）任务被取消了，get方法会抛出异常CancellationException。如果调用get方法的线程被中断了，get方法会抛出InterruptedException。
+3）任务被取消了，get 方法会抛出异常 CancellationException。如果调用 get 方法的线程被中断了，get 方法会抛出InterruptedException。
 
 
 
-Future是一个重要的概念，是实现“任务的提交”与“任务的执行”相分离的关键，是其中的“纽带”，任务提交者和任务执行服务通过它隔离各自的关注点，同时进行协作。
+Future 是一个重要的概念，是实现“任务的提交”与“任务的执行”相分离的关键，是其中的“纽带”，任务提交者和任务执行服务通过它隔离各自的关注点，同时进行协作。
 
 
 
 ##### 18.1.2 基本用法
 
+```java
+public class ChapterEighteenth {
+    static class Task implements Callable<Integer> {
+        @Override
+        public Integer call() throws Exception {
+            int sleepSeconds = new Random().nextInt(10000);
+            Thread.sleep(sleepSeconds);
+            return sleepSeconds;
+        }
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Future<Integer> future = executor.submit(new Task());
+        // 模拟执行其他任务
+        Thread.sleep(1000);
+        System.out.println("main thread do something......");
+        try {
+            System.out.println("call()......start");
+            System.out.println(future.get());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        executor.shutdown();
+    }
+}
+```
+
+
+
+ExecutorService 的其他方法：
+
+```java
+public interface ExecutorService extends Executor {
+    void shutdown();
+    List<Runnable> shutdownNow();
+    boolean isShutdown();
+    boolean isTerminated();
+    boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException;
+    <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException;
+    <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks,long timeout, TimeUnit unit) throws InterruptedException;
+    <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException;
+    <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException;
+}
+```
+
+有两个关闭方法：shutdown 和 shutdownNow。区别是：
+
+- shutdown 表示不再接受新任务，但已提交的任务会继续执行，即使任务还未开始执行；
+- shutdownNow不仅不接受新任务，而且会终止已提交但尚未执行的任务，对于正在执行的任务，一般会调用线程的interrupt方法尝试中断，不过，线程可能不响应中断，shutdownNow会返回已提交但尚未执行的任务列表。
+
+
+
+shutdown 和 shutdownNow 不会阻塞等待，它们返回后不代表所有任务都已结束，不过 isShutdown 方法会返回true。调用者可以通过awaitTermination等待所有任务结束，它可以限定等待的时间，如果超时前所有任务都结束了，即isTerminated方法返回true，则返回true，否则返回false。
+
+
+
+ExecutorService有两组批量提交任务的方法：invokeAll和invokeAny，它们都有两个版本，其中一个限定等待时间。
+
+
+
+invokeAll等待所有任务完成，返回的Future列表中，每个Future的isDone方法都返回true，不过isDone为true不代表任务就执行成功了，可能是被取消了。invokeAll可以指定等待时间，如果超时后有的任务没完成，就会被取消。
+
+
+
+而对于invokeAny，只要有一个任务在限时内成功返回了，它就会返回该任务的结果，其他任务会被取消；如果没有任务能在限时内成功返回，抛出TimeoutException；如果限时内所有任务都结束了，但都发生了异常，抛出ExecutionException。
+
+
+
+使用ExecutorService，编写并发异步任务的代码就像写顺序程序一样，不用关心线程的创建和协调，只需要提交任务、处理结果就可以了，大大简化了开发工作。
+
 
 
 ##### 18.1.3 基本实现原理
 
+ExecutorService 的主要实现类是 ThreadPoolExecutor，它是基于线程池实现的。
 
+ExecutorService有一个抽象实现类AbstractExecutorService，本节，我们简要分析其原理，并基于它实现一个简单的ExecutorService。
+
+
+
+Future的主要实现类是FutureTask。
+
+**1. AbstractExecutorService**
+
+AbstractExecutorService提供了submit、invokeAll和invokeAny的默认实现，子类需要实现其他方法。
+
+submit/invokeAll/invokeAny最终都会调用execute, execute决定了到底如何执行任务。
+
+ExecutorService最基本的方法是submit，它是如何实现的呢？我们来看AbstractExecutor-Service的代码（基于Java 7）：
+
+```java
+        public <T> Future<T> submit(Callable<T> task) {
+            if(task == null) throw new NullPointerException();
+            RunnableFuture<T> ftask = newTaskFor(task);
+            execute(ftask);
+            return ftask;
+        }
+```
+
+它调用newTaskFor生成了一个RunnableFuture, RunnableFuture是一个接口，既扩展了Runnable，又扩展了Future，没有定义新方法，作为Runnable，它表示要执行的任务，传递给execute方法进行执行，作为Future，它又表示任务执行的异步结果。这可能令人混淆，我们来看具体代码：
+
+```java
+        protected <T> RunnableFuture<T> newTaskFor(Callable<T> callable) {
+            return new FutureTask<T>(callable);
+        }
+```
+
+就是创建了一个FutureTask对象，FutureTask实现了RunnableFuture接口。它是怎么实现的呢？我们接下来看（基于Java 7）。
+
+**2. FutureTask**
+
+它有一个成员变量表示待执行的任务，声明为：
+
+```java
+        private Callable<V> callable;
+```
+
+有个整数变量state表示状态，声明为：
+
+```java
+        NEW            = 0; //刚开始的状态，或任务在运行
+        COMPLETING   = 1; //临时状态，任务即将结束，在设置结果
+        NORMAL        = 2; //任务正常执行完成
+        EXCEPTIONAL  = 3; //任务执行抛出异常结束
+        CANCELLED     = 4; //任务被取消
+        INTERRUPTING = 5; //任务在被中断
+        INTERRUPTED  = 6; //任务被中断
+```
+
+有个变量表示最终的执行结果或异常，声明为：
+
+```java
+        private Object outcome;
+```
+
+有个变量表示运行任务的线程：
+
+```java
+        private volatile Thread runner;
+```
+
+还有个单向链表表示等待任务执行结果的线程：
+
+```java
+        private volatile WaitNode waiters;
+```
+
+FutureTask的构造方法会初始化callable和状态，如果FutureTask接受的是一个Runnable对象，它会调用Executors.callable转换为Callable对象，如下所示：
+
+```Java
+        public FutureTask(Runnable runnable, V result) {
+            this.callable = Executors.callable(runnable, result);
+            this.state = NEW;         //ensure visibility of callable
+        }
+```
+
+任务执行服务会使用一个线程执行FutureTask的run方法。run方法的代码为：
+
+```Java
+public void run() {
+    if(state ! = NEW ||
+        !UNSAFE.compareAndSwapObject(this, runnerOffset,
+                                      null, Thread.currentThread()))
+        return;
+    try {
+        Callable<V> c = callable;
+        if(c ! = null && state == NEW) {
+            V result;
+            boolean ran;
+            try {
+                result = c.call();
+                ran = true;
+            } catch (Throwable ex) {
+                result = null;
+                ran = false;
+                setException(ex);
+            }
+            if(ran)
+                set(result);
+        }
+    } finally {
+        //runner must be non-null until state is settled to
+        //prevent concurrent calls to run()
+        runner = null;
+        //state must be re-read after nulling runner to prevent
+        //leaked interrupts
+        int s = state;
+        if(s >= INTERRUPTING)
+            handlePossibleCancellationInterrupt(s);
+    }
+}
+```
+
+其基本逻辑是：
+
+1）调用callable的call方法，捕获任何异常；
+
+2）如果正常执行完成，调用set设置结果，保存到outcome；
+
+3）如果执行过程发生异常，调用setException设置异常，异常也是保存到outcome，但状态不一样；
+
+4）set和setException除了设置结果、修改状态外，还会调用finishCompletion，它会唤醒所有等待结果的线程。
+
+
+
+对于任务提交者，它通过get方法获取结果，限时get方法的代码为：
+
+```Java
+        public V get(long timeout, TimeUnit unit)
+            throws InterruptedException, ExecutionException, TimeoutException {
+            if(unit == null)
+                throw new NullPointerException();
+            int s = state;
+            if(s <= COMPLETING &&
+                (s = awaitDone(true, unit.toNanos(timeout))) <= COMPLETING)
+                throw new TimeoutException();
+            return report(s);
+        }
+```
+
+其基本逻辑是：如果任务还未执行完毕，就等待，最后调用report报告结果， report根据状态返回结果或抛出异常，代码为：
+
+```Java
+        private V report(int s) throws ExecutionException {
+            Object x = outcome;
+            if(s == NORMAL)
+                return (V)x;
+            if(s >= CANCELLED)
+                throw new CancellationException();
+            throw new ExecutionException((Throwable)x);
+        }
+```
+
+cancel方法的代码为：
+
+```Java
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            if(state ! = NEW)
+                return false;
+            if(mayInterruptIfRunning) {
+                if(! UNSAFE.compareAndSwapInt(this, stateOffset, NEW, INTERRUPTING))
+                    return false;
+                Thread t = runner;
+                if(t ! = null)
+                    t.interrupt();
+                UNSAFE.putOrderedInt(this, stateOffset, INTERRUPTED); // final state
+            }
+            else if(! UNSAFE.compareAndSwapInt(this, stateOffset, NEW, CANCELLED))
+                return false;
+            finishCompletion();
+            return true;
+        }
+```
+
+其基本逻辑为：
+
+- 如果任务已结束或取消，返回false；
+- 如果mayInterruptIfRunning为true，调用interrupt中断线程，设置状态为INTERR-UPTED；
+- 如果mayInterruptIfRunning为false，设置状态为CANCELLED；
+- 调用finishCompletion唤醒所有等待结果的线程。
 
 ##### 18.1.4 小结
+
+本节介绍了Java并发包中任务执行服务的基本概念和原理，该服务体现了并发异步开发中“关注点分离”的思想，使用者只需要通过ExecutorService提交任务，通过Future操作任务和结果即可，不需要关注线程创建和协调的细节。
+
+
+
+#### 18.2 线程池
+
+线程池是并发程序中一个非常重要的概念和技术。线程池，顾名思义，就是一个线程的池子，里面有若干线程，它们的目的就是执行提交给线程池的任务，执行完一个任务后不会退出，而是继续等待或执行新任务。线程池主要由两个概念组成：一个是任务队列；另一个是工作者线程。工作者线程主体就是一个循环，循环从队列中接受任务并执行，任务队列保存待执行的任务。
+
+
+
+线程池的优点是显而易见的：
+
+- 它可以重用线程，避免线程创建的开销。
+
+- 任务过多时，通过排队避免创建过多线程，减少系统资源消耗和竞争，确保任务有序完成。
+
+
+
+Java并发包中线程池的实现类是ThreadPoolExecutor，它继承自AbstractExecutor-Service，实现了ExecutorService。
+
+ThreadPoolExecutor有一些重要的参数，理解这些参数对于合理使用线程池非常重要。
+
+
+
+##### 18.2.1 理解线程池
+
+先来看ThreadPoolExecutor的构造方法。ThreadPoolExecutor有多个构造方法，都需要一些参数，主要构造方法有：
+
+```Java
+        public ThreadPoolExecutor(int corePoolSize, int maximumPoolSize,
+              long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue)
+        public ThreadPoolExecutor(int corePoolSize, int maximumPoolSize,
+              long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue,
+              ThreadFactory threadFactory, RejectedExecutionHandler handler)
+```
+
+第二个构造方法多了两个参数threadFactory和handler，这两个参数一般不需要，第一个构造方法会设置默认值。参数corePoolSize、maximumPoolSize、keepAliveTime、unit用于控制线程池中线程的个数，workQueue表示任务队列，threadFactory用于对创建的线程进行一些配置，handler表示任务拒绝策略。
+
+
+
+**1. 线程池大小**
+
+线程池的大小主要与4个参数有关：
+
+- corePoolSize：核心线程个数。
+- maximumPoolSize：最大线程个数。
+- keepAliveTime和unit：空闲线程存活时间。
+
+maximumPoolSize表示线程池中的最多线程数，线程的个数会动态变化，但这是最大值，不管有多少任务，都不会创建比这个值大的线程个数。
+
+corePoolSize表示线程池中的核心线程个数，不过，并不是一开始就创建这么多线程，刚创建一个线程池后，实际上并不会创建任何线程。
+
+
+
+一般情况下，有新任务到来的时候，如果当前线程个数小于corePoolSiz，就会创建一个新线程来执行该任务，需要说明的是，即使其他线程现在也是空闲的，也会创建新线程。
+
+不过，如果线程个数大于等于corePoolSiz，那就不会立即创建新线程了，它会先尝试排队，需要强调的是，它是“尝试”排队，而不是“阻塞等待”入队，如果队列满了或其他原因不能立即入队，它就不会排队，而是检查线程个数是否达到了maximumPoolSize，如果没有，就会继续创建线程，直到线程数达到maximumPoolSize。
+
+
+
+keepAliveTime的目的是为了释放多余的线程资源，它表示，当线程池中的线程个数大于corePoolSize时额外空闲线程的存活时间。也就是说，一个非核心线程，在空闲等待新任务时，会有一个最长等待时间，即keepAliveTime，如果到了时间还是没有新任务，就会被终止。
+
+如果该值为0，则表示所有线程都不会超时终止。
+
+
+
+这几个参数除了可以在构造方法中进行指定外，还可以通过getter/setter方法进行查看和修改。
+
+
+
+除了这些静态参数，ThreadPoolExecutor还可以查看关于线程和任务数的一些动态数字：
+
+```Java
+        //返回当前线程个数
+        public int getPoolSize()
+        //返回线程池曾经达到过的最大线程个数
+        public int getLargestPoolSize()
+        //返回线程池自创建以来所有已完成的任务数
+        public long getCompletedTaskCount()
+        //返回所有任务数，包括所有已完成的加上所有排队待执行的
+        public long getTaskCount()
+```
+
+
+
+**2. 队列**
+
+ThreadPoolExecutor要求的队列类型是阻塞队列BlockingQueue。
+
+我们在17.4节介绍过多种BlockingQueue，它们都可以用作线程池的队列，比如：
+
+- LinkedBlockingQueue：基于链表的阻塞队列，可以指定最大长度，但默认是无界的。
+- ArrayBlockingQueue：基于数组的有界阻塞队列。
+-  PriorityBlockingQueue：基于堆的无界阻塞优先级队列。
+-  SynchronousQueue：没有实际存储空间的同步阻塞队列。
+
+
+
+如果用的是无界队列，需要强调的是，线程个数最多只能达到corePoolSize，到达core-PoolSize后，新的任务总会排队，参数maximumPoolSize也就没有意义了。
+
+**3. 任务拒绝策略**
+
+如果队列有界，且maximumPoolSize有限，则当队列排满，线程个数也达到了maxi-mumPoolSize，这时，新任务来了，如何处理呢？此时，会触发线程池的任务拒绝策略。
+
+
+
+默认情况下，提交任务的方法（如execute/submit/invokeAll等）会抛出异常，类型为RejectedExecutionException。
+
+不过，拒绝策略是可以自定义的，ThreadPoolExecutor实现了4种处理方式。
+
+1）ThreadPoolExecutor.AbortPolicy：这就是默认的方式，抛出异常。
+
+2）ThreadPoolExecutor.DiscardPolicy：静默处理，忽略新任务，不抛出异常，也不执行。
+
+3）ThreadPoolExecutor.DiscardOldestPolicy：将等待时间最长的任务扔掉，然后自己排队。
+
+4）ThreadPoolExecutor.CallerRunsPolicy：在任务提交者线程中执行任务，而不是交给线程池中的线程执行。
+
+
+
+它们都是ThreadPoolExecutor的public静态内部类，都实现了RejectedExecutionHandler接口，这个接口的定义为：
+
+```Java
+        public interface RejectedExecutionHandler {
+            void rejectedExecution(Runnable r, ThreadPoolExecutor executor);
+        }
+```
+
+当线程池不能接受任务时，调用其拒绝策略的rejectedExecution方法。
+
+拒绝策略可以在构造方法中进行指定，也可以通过如下方法进行指定：
+
+```Java
+        public void setRejectedExecutionHandler(RejectedExecutionHandler handler)
+```
+
+默认的RejectedExecutionHandler是一个AbortPolicy实例，如下所示：
+
+```Java
+        private static final RejectedExecutionHandler defaultHandler =
+            new AbortPolicy();
+```
+
+而AbortPolicy的rejectedExecution实现就是抛出异常，如下所示：
+
+```Java
+        public void rejectedExecution(Runnable r, ThreadPoolExecutor e) {
+            throw new RejectedExecutionException("Task " + r.toString() +
+                                      " rejected from " + e.toString());
+        }
+```
+
+我们需要强调下，拒绝策略只有在队列有界，且maximumPoolSize有限的情况下才会触发。如果队列无界，服务不了的任务总是会排队，但这不一定是期望的结果，因为请求处理队列可能会消耗非常大的内存，甚至引发内存不够的异常。如果队列有界但maxi-mumPoolSize无限，可能会创建过多的线程，占满CPU和内存，使得任何任务都难以完成。所以，在任务量非常大的场景中，让拒绝策略有机会执行是保证系统稳定运行很重要的方面。
+
+
+
+**4. 线程工厂**
+
+线程池还可以接受一个参数：ThreadFactory。它是一个接口，定义为：
+
+```Java
+        public interface ThreadFactory {
+            Thread newThread(Runnable r);
+        }
+```
+
+这个接口根据Runnable创建一个Thread, ThreadPoolExecutor的默认实现是Executors类中的静态内部类DefaultThreadFactory，主要就是创建一个线程，给线程设置一个名称，设置daemon属性为false，设置线程优先级为标准默认优先级，线程名称的格式为：pool-<线程池编号>-thread-<线程编号>。
+
+如果需要自定义一些线程的属性，比如名称，可以实现自定义的ThreadFactory。
+
+**5. 关于核心线程的特殊配置**
+
+线程个数小于等于corePoolSize时，我们称这些线程为核心线程，默认情况下。
+
+-  核心线程不会预先创建，只有当有任务时才会创建。
+- 核心线程不会因为空闲而被终止，keepAliveTime参数不适用于它。
+
+不过，ThreadPoolExecutor有如下方法，可以改变这个默认行为。
+
+```Java
+        //预先创建所有的核心线程
+        public int prestartAllCoreThreads()
+        //创建一个核心线程，如果所有核心线程都已创建，则返回false
+        public boolean prestartCoreThread()
+        //如果参数为true，则keepAliveTime参数也适用于核心线程
+        public void allowCoreThreadTimeOut(boolean value)
+```
+
+
+
+##### 18.2.2 工厂类 Executors
+
+类Executors提供了一些静态工厂方法，可以方便地创建一些预配置的线程池，主要方法有：
+
+```Java
+        public static ExecutorService newSingleThreadExecutor()
+        public static ExecutorService newFixedThreadPool(int nThreads)
+        public static ExecutorService newCachedThreadPool()
+```
+
+newSingleThreadExecutor基本相当于调用：
+
+```Java
+        public static ExecutorService newSingleThreadExecutor() {
+            return new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, 
+                                          new LinkedBlockingQueue<Runnable>());
+        }
+```
+
+只使用一个线程，使用无界队列LinkedBlockingQueue，线程创建后不会超时终止，该线程顺序执行所有任务。该线程池适用于需要确保所有任务被顺序执行的场合。
+
+
+
+newFixedThreadPool的代码为：
+
+```Java
+        public static ExecutorService newFixedThreadPool(int nThreads) {
+            return new ThreadPoolExecutor(nThreads, nThreads, 0L,
+                        TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
+        }
+```
+
+使用固定数目的n个线程，使用无界队列LinkedBlockingQueue，线程创建后不会超时终止。和newSingleThreadExecutor一样，由于是无界队列，如果排队任务过多，可能会消耗过多的内存。
+
+
+
+newCachedThreadPool的代码为：
+
+```Java
+        public static ExecutorService newCachedThreadPool() {
+            return new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L,
+                        TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
+        }
+```
+
+它的corePoolSize为0, maximumPoolSize为Integer.MAⅩ_VALUE, keepAliveTime是60秒，队列为SynchronousQueue。它的含义是：当新任务到来时，如果正好有空闲线程在等待任务，则其中一个空闲线程接受该任务，否则就总是创建一个新线程，创建的总线程个数不受限制，对任一空闲线程，如果60秒内没有新任务，就终止。
+
+
+
+实际中，应该使用newFixedThreadPool还是newCachedThreadPool呢？
+
+在系统负载很高的情况下，newFixedThreadPool可以通过队列对新任务排队，保证有足够的资源处理实际的任务，而newCachedThreadPool会为每个任务创建一个线程，导致创建过多的线程竞争CPU和内存资源，使得任何实际任务都难以完成，这时， newFixedThreadPool更为适用。
+
+不过，如果系统负载不太高，单个任务的执行时间也比较短，newCachedThreadPool的效率可能更高，因为任务可以不经排队，直接交给某一个空闲线程。
+
+在系统负载可能极高的情况下，两者都不是好的选择，newFixedThreadPool的问题是队列过长，而newCachedThreadPool的问题是线程过多，这时，应根据具体情况自定义ThreadPoolExecutor，传递合适的参数。
+
+##### 18.2.3 线程池的死锁
+
+关于提交给线程池的任务，我们需要注意一种情况，就是任务之间有依赖，这种情况可能会出现死锁。比如任务A，在它的执行过程中，它给同样的任务执行服务提交了一个任务B，但需要等待任务B结束。
+
+
+
+如果任务A是提交给了一个单线程线程池，一定会出现死锁，A在等待B的结果，而B在队列中等待被调度。如果是提交给了一个限定线程个数的线程池，也有可能因线程数限制出现死锁。
+
+
+
+怎么解决这种问题呢？可以使用newCachedThreadPool创建线程池，让线程数不受限制。另一个解决方法是使用SynchronousQueue，它可以避免死锁，怎么做到的呢？对于普通队列，入队只是把任务放到了队列中，而对于SynchronousQueue来说，入队成功就意味着已有线程接受处理，如果入队失败，可以创建更多线程直到maximumPoolSize，如果达到了maximumPoolSize，会触发拒绝机制，不管怎么样，都不会死锁。
+
+##### 18.2.4 小结
+
+本节介绍了线程池的基本概念，详细探讨了其主要参数的含义，理解这些参数对于合理使用线程池是非常重要的，对于相互依赖的任务，需要注意避免出现死锁。
+
+ThreadPoolExecutor实现了生产者/消费者模式，工作者线程就是消费者，任务提交者就是生产者，线程池自己维护任务队列。当我们碰到类似生产者/消费者问题时，应该优先考虑直接使用线程池，而非“重新发明轮子”，应自己管理和维护消费者线程及任务队列。
+
+
+
+#### 18.3 定时任务的那些陷阱
+
+本节探讨定时任务，定时任务的应用场景是非常多的，比如：
+
+- 闹钟程序或任务提醒，指定时间叫床或在指定日期提醒还信用卡。
+-  监控系统，每隔一段时间采集下系统数据，对异常事件报警。
+-  统计系统，一般凌晨一定时间统计昨日的各种数据指标。
+
+
+
+在Java中，主要有两种方式实现定时任务：
+
+- 使用java.util包中的Timer和TimerTask。
+- 使用Java并发包中的ScheduledExecutorService。
+
+
+
+它们的基本用法都是比较简单的，但如果对它们没有足够的了解，则很容易陷入其中的一些陷阱。下面，我们就来介绍它们的用法、原理以及那些陷阱。
+
+##### 18.3.1 Timer 和 TimerTask
+
+
+
+
+
+
+
+
+
+### 第 19 章 同步和协作工具类
+
+#### 19.1 读写锁 ReentrantReadWriteLock
+
+
+
+#### 19.2 信号量 Semaphore
+
+
+
+#### 19.3 倒计时 CountDownLatch
+
+
+
+#### 19.4 循环栅栏 CyclicBarrier
+
+
+
+#### 19.5 理解 ThreadLocal
+
+
+
+### 第 20 章 并发总结
+
+
+
+## 第六部分 动态与函数式编程
+
+### 第 21 章 反射
+
+
+
+### 第 22 章 注解
+
+
+
+### 第 23 章 动态代理
+
+
+
+### 第 24 章 类加载机制
+
+
+
+### 第 25 章 正则表达式
+
+
+
+### 第 26 章 函数式编程
+
+
+
+## The End
 
 
 
