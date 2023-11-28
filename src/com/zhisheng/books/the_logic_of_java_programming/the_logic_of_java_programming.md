@@ -3454,6 +3454,78 @@ Java 的一些动态特性，包括反射、注解、动态代理、类加载器
 
 #### 26.1 Lambda 表达式
 
+##### 26.1.1 通过接口传递代码
+
+接口常被用于传递代码。
+
+通过接口传递行为代码，就要传递一个实现了该接口的实例对象，在之前的章节中，最简洁的方式是使用匿名内部类。
+
+
+
+##### 26.1.2 Lambda 语法
+
+通过接口传递代码，使用匿名内部类：
+
+```Java
+        //列出当前目录下的所有扩展名为．txt的文件
+        File f = new File(".");
+        File[] files = f.listFiles(new FilenameFilter(){
+            @Override
+            public boolean accept(File dir, String name) {
+                if(name.endsWith(".txt")){
+                    return true;
+                }
+                return false;
+            }
+        });
+```
+
+Java 8 提供了一种新的紧凑的传递代码的语法：Lambda 语法：
+
+```Java
+        File f = new File(".");
+        File[] files = f.listFiles((File dir, String name) -> {
+            if(name.endsWith(".txt")) {
+                return true;
+            }
+            return false;
+        });
+```
+
+直接给出了方法的实现代码。
+
+Lambda 表达式由`->`分隔为两部分，前面是方法的参数，后面`{}`内是方法的代码。
+
+最终形式：
+
+```Java
+        File[] files = f.listFiles((dir, name) -> name.endsWith(".txt"));
+```
+
+
+
+##### 26.1.3 函数式接口
+
+Java 8 引入了函数式接口的概念，函数式接口也是接口，但只能有一个抽象方法。
+
+Lambda表达式可以赋值给函数式接口。
+
+```Java
+        FileFilter filter = path -> path.getName().endsWith(".txt");
+        FilenameFilter fileNameFilter = (dir, name) -> name.endsWith(".txt");
+        Comparator<File> comparator = (f1, f2) ->
+                            f1.getName().compareTo(f2.getName());
+        Runnable task = () -> System.out.println("hello world");
+```
+
+
+
+##### 26.1.4 预定义的函数式接口
+
+Java 8 定义了大量的预定义函数式接口，用于常见类型的代码传递，这些函数定义在包 `java.util.function`下。
+
+<img src="the_logic_of_java_programming.assets/image-20231127180721750.png" alt="image-20231127180721750" style="zoom:33%;" />
+
 
 
 
