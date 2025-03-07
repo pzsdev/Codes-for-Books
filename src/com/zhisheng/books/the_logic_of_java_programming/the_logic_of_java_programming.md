@@ -9,6 +9,7 @@
 ### 第4章 类的继承
 
 #### 4.3 继承实现的基本原理
+
 本节通过一个例子来介绍继承实现的基本原理。需要说明的是，本节主要从概念上来介绍原理，实际实现细节可能与此不同。
 
 ##### 4.3.1 示例
@@ -2162,6 +2163,1382 @@ FileFilter的accept方法参数只有一个File对象，
             }
         });
 ```
+
+### 第 14 章 文件高级技术
+
+#### 14.1 常见文件类型处理
+
+- 1、 属性文件：属性文件是常见的配置文件，用于在不改变代码的情况下改变程序的行为。
+- 2、CSV：CSV是Comma-Separated Values的缩写，表示逗号分隔值，
+是一种非常常见的文件类型。大部分日志文件都是CSV, CSV也经常用于交换表格类型的数据， 
+待会我们会看到，CSV看上去很简单，但处理的复杂性经常被低估。
+- 3、Excel：在编程中，经常需要将表格类型的数据导出为Excel格式，以方便用户查看，
+也经常需要接受Excel类型的文件作为输入以批量导入数据。
+- 4、HTML：所有网页都是HTML格式，我们经常需要分析HTML网页，以从中提取感兴趣的信息。
+- 5、压缩文件：压缩文件有多种格式，也有很多压缩工具，大部分情况下，
+我们可以借助工具而不需要自己写程序处理压缩文件，但某些情况下，
+需要自己编程压缩文件或解压缩文件。
+
+##### 14.1.1 属性文件
+
+属性文件一般很简单，一行表示一个属性，属性就是键值对，
+键和值用等号（=）或冒号（:）分隔，一般用于配置程序的一些参数。
+
+在需要连接数据库的程序中，经常使用配置文件配置数据库信息。
+比如，设有文件config.properties，内容大概如下所示：
+```java
+        db.host = 192.168.10.100
+        db.port : 3306
+        db.username = zhangsan
+        db.password = mima1234
+```
+
+处理这种文件使用字符流是比较容易的，
+但Java中有一个专门的类java.util.Properties，它的使用也很简单，
+有如下主要方法：
+
+```java
+        public synchronized void load(InputStream inStream)
+        public String getProperty(String key)
+        public String getProperty(String key, String defaultValue)
+```
+
+load用于从流中加载属性，getProperty用于获取属性值，可以提供一个默认值，
+如果没有找到配置的值，则返回默认值。对于上面的配置文件，
+可以使用类似下面的代码进行读取：
+```java
+        Properties prop = new Properties();
+        prop.load(new FileInputStream("config.properties"));
+        String host = prop.getProperty("db.host");
+        int port = Integer.valueOf(prop.getProperty("db.port", "3306"));
+```
+
+使用类Properties处理属性文件的好处是：   
+- 可以自动处理空格，分隔符=前后的空格会被自动忽略。
+- 可以自动忽略空行。
+- 可以添加注释，以字符#或！开头的行会被视为注释，进行忽略。
+
+使用Properties也有限制，它不能直接处理中文，在配置文件中，
+所有非ASCII字符需要使用Unicode编码。比如，不能在配置文件中直接这么写：
+```java
+        name=老马
+```
+“老马”需要替换为Unicode编码，如下所示：
+```java
+        name=\u8001\u9A6C
+```
+
+在Java IDE（如Eclipse）中，如果使用属性文件编辑器，
+它会自动替换中文为Unicode编码；如果使用其他编辑器，可以先写成中文，
+然后使用JDK提供的命令native2ascii转换为Unicode编码。用法如下例所示：
+```java
+native2ascii -encoding UTF-8 native.properties ascii.properties
+```
+native.properties是输入，其中包含中文；ascii.properties是输出，
+中文替换为了Unicode编码；-encoding指定输入文件的编码，这里指定为了UTF-8。
+
+##### 14.1.2 CSV 文件
+
+第三方库 Apache Commons CSV。
+
+##### 14.1.3 Excel
+
+POI 类库。
+
+Workbook,Sheet,Row,Cell。
+
+##### 14.1.4 HTML
+
+HTML 分析器，jsoup。
+
+##### 14.1.5 压缩文件
+
+Java SDK 支持两种压缩文件：gzip 和 zip，gzip 只能压缩一个文件，而 zip 文件中
+可以包含多个文件。
+
+
+Java API，gzip：
+```java
+        java.util.zip.GZIPOutputStream
+        java.util.zip.GZIPInputStream
+```
+
+zip文件支持一个压缩文件中包含多个文件，Java API中主要的类是：
+```java
+        java.util.zip.ZipOutputStream
+        java.util.zip.ZipInputStream
+```
+
+#### 14.2 随机读写文件
+
+##### 14.2.1 用法
+
+## 第五部分 并发
+
+### 第 15 章 并发基础知识
+
+#### 15.1 线程的基本概念
+
+##### 15.1.1 创建线程
+
+线程表示一条单独的执行流，它有自己的程序执行计数器，有自己的栈。
+
+在Java中创建线程有两种方式：一种是继承Thread；另外一种是实现Runnable接口。
+
+**1. 继承 Thread**
+
+Java中java.lang.Thread这个类表示线程，一个类可以继承Thread并重写其run方
+法来实现一个线程，如下所示：
+```java
+        public class HelloThread extends Thread {
+              @Override
+            public void run() {
+                  System.out.println("hello");
+            }
+        }
+```
+
+HelloThread这个类继承了Thread，并重写了run方法。
+run方法的方法签名是固定的， public，没有参数，没有返回值，
+不能抛出受检异常。run方法类似于单线程程序中的main方法，
+线程从run方法的第一条语句开始执行直到结束。
+
+定义了这个类不代表代码就会开始执行，线程需要被启动，
+启动需要先创建一个HelloThread对象，然后调用Thread的start方法，如下所示：
+```java
+        public static void main(String[] args) {
+            Thread thread = new HelloThread();
+            thread.start();
+        }
+```
+
+**2. 实现 Runnable 接口**
+
+##### 15.1.2 线程的e基本属性和方法
+
+**1. id 和 name**
+
+**2. 优先级**
+
+**3. 状态**
+
+```java
+        public enum State {
+          NEW,
+          RUNNABLE,
+          BLOCKED,
+          WAITING,
+          TIMED_WAITING,
+          TERMINATED;
+        }
+```
+
+**4. 是否 daemon 线程**
+
+**5. sleep 方法**
+
+Thread有一个静态的sleep方法，调用该方法会让当前线程睡眠指定的时间，单位是毫秒：
+```java
+public static native void sleep(long millis) throws InterruptedException;
+```
+睡眠期间，该线程会让出CPU，但睡眠的时间不一定是确切的给定毫秒数，
+可能有一定的偏差，偏差与系统定时器和操作系统调度器的准确度和精度有关。
+睡眠期间，线程可以被中断，如果被中断，sleep会抛出InterruptedException。
+
+**6. yield 方法**
+
+Thread还有一个让出CPU的方法：
+```java
+public static native void yield();
+```
+这也是一个静态方法，调用该方法，是告诉操作系统的调度器：
+我现在不着急占用CPU，你可以先让其他线程运行。
+不过，这对调度器也仅仅是建议，调度器如何处理是不一定的，它可能完全忽略该调用。
+
+**7. join 方法**
+
+在前面HelloThread的例子中，HelloThread没执行完，main线程可能就执行完了，Thread有一个join方法，可以让调用join的线程等待该线程结束，
+join方法的声明为：
+
+```java
+    public final void join() throws InterruptedException
+```
+在等待线程结束的过程中，这个等待可能被中断，如果被中断，会抛出Interrupted-Exception。
+
+join方法还有一个变体，可以限定等待的最长时间，单位为毫秒，如果为0，表示无期限等待：
+
+```java
+        public final synchronized void join(long millis) throws InterruptedException
+```
+
+在前面HelloThread示例中，如果希望main线程在子线程结束后再退出，main方法可以改为：
+```java
+        public static void main(String[] args) throws InterruptedException {
+            Thread thread = new HelloThread();
+            thread.start();
+            thread.join();
+        }
+```
+
+**8. 过时方法**
+
+Thread类中还有一些看上去可以控制线程生命周期的方法，如：
+```java
+        public final void stop()
+        public final void suspend()
+        public final void resume()
+```
+这些方法因为各种原因已被标记为了过时，我们不应该在程序中使用它们。
+
+##### 15.1.3 共享内存及可能存在的问题
+
+**1. 竞态条件**
+
+所谓竞态条件（race condition）是指，当多个线程访问和操作同一个对象时，最终执行结果与执行时序有关，可能正确也可能不正确。
+
+**2. 内存可见性**
+
+Memory Visibility Problem，多个线程可以共享访问和操作相同的变量，但一个线程对一个共享变量的修改，另一个线程不一定马上就能看到，甚至永远也看不到。
+
+竞态条件和内存可见性的区别主要有以下几点:
+1. 竞态条件是指多个线程访问同一个共享资源时,由于代码逻辑顺序导致最终结果与期望不一致。内存可见性是指在多线程环境下,一个线程对共享变量的修改可能不会立即被其他线程看到。
+2. 竞态条件是高层次的概念,是多个线程之间访问资源顺序导致的问题。内存可见性是底层的概念,是由于 cpu 缓存机制导致线程间数据传递的延迟。
+3. 解决竞态条件需要用同步机制来控制线程间的执行顺序,如互斥锁、信号量等。解决内存可见性需要使用 volatile、synchronized 等来保证立即刷新变量值。
+4. 竞态条件的问题更多体现在业务逻辑上,如两线程对同一个余额进行操作。内存可见性更关注硬件层次,如 cpu 写缓存还未刷回主存。
+5. 竞态条件可能会引起数据错误或异常。内存可见性主要会出现脏读,一个线程读取到另一个线程尚未完成更新的变量值。
+6. 相同点是它们都出现在多线程共享数据的场景,可能导致线程间的数据传递错误。但侧重点不同,需要合理运用同步机制来解决。
+
+Java 竞态条件 和 内存可见性的区别和联系：   
+竞态条件和内存可见性都与多线程编程中的内存一致性问题有关,但二者有些区别:   
+1. 竞态条件(Race Condition)
+   指多个线程在没有充分同步的情况下访问共享资源,由于代码执行时间和顺序的不确定性,导致程序执行结果出现错误。比如多个线程同时对一个变量进行读写,结果与预期不符。
+2. 内存可见性
+   指在多线程环境下,一个线程对共享变量的修改可能不会立即反映到其他线程中,造成不同线程看到的变量值不一致。这是由于CPU缓存和指令重排序导致。
+   两者的联系:
+   竞态条件的产生与内存可见性问题有关。因为当一个线程的操作没有立即反映到其他线程,就可能引发竞态条件。
+   解决方法:
+- 使用同步机制(synchronized,锁)来防止竞态条件
+
+- 使用volatile关键字或原子类来保证内存可见性
+  
+  
+  
+  所以可以说,内存可见性问题是导致竞态条件的原因之一,使用同步、volatile等可以既解决内存可见性问题,
+  也能防止竞态条件。两者有关联但不完全等同。
+
+##### 15.1.4 线程的优点及成本
+
+为什么要创建单独的执行流？或者说线程有什么优点呢？至少有以下几点：
+
+1）充分利用多CPU的计算能力，单线程只能利用一个CPU，使用多线程可以利用多CPU的计算能力。   
+2）充分利用硬件资源，CPU和硬盘、网络是可以同时工作的，一个线程在等待网络IO的同时，另一个线程完全可以利用CPU，对于多个独立的网络请求，完全可以使用多个线程同时请求。   
+3）在用户界面（GUI）应用程序中，保持程序的响应性，界面和后台任务通常是不同的线程，否则，如果所有事情都是一个线程来执行，当执行一个很慢的任务时，整个界面将停止响应，也无法取消该任务。   
+4）简化建模及IO处理，比如，在服务器应用程序中，对每个用户请求使用一个单独的线程进行处理，相比使用一个线程，处理来自各种用户的各种请求，以及各种网络和文件IO事件，建模和编写程序要容易得多。
+
+#### 15.2 理解 synchronized
+
+##### 15.2.1 用法和基本原理
+
+synchronized可以用于修饰类的`实例方法`、`静态方法`和`代码块`（代码块一般都在一个方法内部）。
+
+**1. 实例方法**
+
+synchronized实例方法实际保护的是同一个对象的方法调用，确保同时只能有一个线程执行。
+再具体来说，synchronized实例方法保护的是当前实例对象，即this, this对象有一个锁和一个等待队列，锁只能被一个线程持有，其他试图获得同样锁的线程需要等待。
+
+执行synchronized实例方法的过程大致如下：   
+1）尝试获得锁，如果能够获得锁，继续下一步，否则加入等待队列，阻塞并等待唤醒。   
+2）执行实例方法体代码。   
+3）释放锁，如果等待队列上有等待的线程，从中取一个并唤醒， 如果有多个等待的线程，唤醒哪一个是不一定的，不保证公平性。
+
+当前线程不能获得锁的时候，它会加入等待队列等待，线程的状态会变为BLOCKED。
+
+我们再强调下，synchronized保护的是对象而非代码，只要访问的是同一个对象的synchronized方法，即使是不同的代码，也会被同步顺序访问。比如，对于Counter中的两个实例方法getCount和incr，对同一个Counter对象，一个线程执行getCount，另一个执行incr，它们是不能同时执行的，会被synchronized同步顺序执行。
+
+一般在保护变量时，需要在所有访问该变量的方法上加上synchronized。
+
+**2. 静态方法**
+
+synchronized同样可以用于静态方法，如代码清单15-6所示。
+```java
+public class StaticCounter {
+    private static int count = 0;
+    public static synchronized void incr() {
+        count++;
+    }
+    public static synchronized int getCount() {
+        return count;
+    }
+}
+```
+
+synchronized保护的是对象，对实例方法，保护的是当前实例对象this，对静态方法，保护的是哪个对象呢？是类对象，这里是StaticCounter.class。实际上，每个对象都有一个锁和一个等待队列，类对象也不例外。
+
+**3. 代码块**
+
+除了用于修饰方法外，synchronized还可以用于包装代码块。
+
+```java
+        public class Counter {
+            private int count;
+            public void incr(){
+                synchronized(this){
+                    count ++;
+                }
+            }
+            public int getCount() {
+                synchronized(this){
+                    return count;
+                }
+            }
+        }
+```
+synchronized括号里面的就是保护的对象，对于实例方法，就是this, {}里面是同步执行的代码。
+
+```java
+        public class StaticCounter {
+            private static int count = 0;
+            public static void incr() {
+                synchronized(StaticCounter.class){
+                    count++;
+                }
+            }
+            public static int getCount() {
+                synchronized(StaticCounter.class){
+                    return count;
+                }
+            }
+        }
+```
+synchronized同步的对象可以是任意对象，任意对象都有一个锁和等待队列，或者说，任何对象都可以作为锁对象。
+
+##### 15.2.2 进一步理解 synchronized
+
+**1. 可重入性**
+
+synchronized有一个重要的特征，它是可重入的，也就是说，对同一个执行线程，它在获得了锁之后，在调用其他需要同样锁的代码时，可以直接调用。
+
+可重入是通过记录锁的持有线程和持有数量来实现的，当调用被synchronized保护的代码时，检查对象是否已被锁，如果是，再检查是否被当前线程锁定，如果是，增加持有数量，如果不是被当前线程锁定，才加入等待队列，当释放锁时，减少持有数量，当数量变为0时才释放整个锁。
+
+**2. 内存可见性**
+
+synchronized除了保证原子操作外，它还有一个重要的作用，就是保证内存可见性，在释放锁时，所有写入都会写回内存，而获得锁后，都会从内存中读最新数据。
+
+**3. 死锁**
+
+使用synchronized或者其他锁，要注意死锁。
+所谓死锁就是类似这种现象，比如，有a、b两个线程，a持有锁A，在等待锁B，而b持有锁B，在等待锁A, a和b陷入了互相等待，最后谁都执行不下去。
+
+应该尽量避免在持有一个锁的同时去申请另一个锁，如果确实需要多个锁，所有代码都应该按照相同的顺序去申请锁。
+
+还可以借助 jstack 命令发现死锁。
+
+##### 15.2.3 同步容器及其注意事项
+
+类Collection中有一些方法，可以返回线程安全的同步容器。
+
+加了synchronized，所有方法调用变成了原子操作，客户端在调用时，是不是就绝对安全了呢？不是的，至少有以下情况需要注意：
+
+**1. 复合操作，比如先检查再更新**
+
+**2. 伪同步**   
+  同步错对象了。
+
+**3. 迭代**
+
+**4. 并发容器**
+
+除了以上这些注意事项，同步容器的性能也是比较低的，当并发访问量比较大的时候性能比较差。所幸的是，Java中还有很多专为并发设计的容器类，比如：
+
+- CopyOnWriteArrayList。
+- ConcurrentHashMap。
+- ConcurrentLinkedQueue。
+- ConcurrentSkipListSet。
+
+#### 15.3 线程的基本协作机制
+
+多线程之间除了竞争访问同一个资源外，也经常需要相互协作，怎么协作呢？Java 中多线程协作的基本机制是 wait/notify。
+
+##### 15.3.1 协作的场景
+
+多线程之间需要协作的场景有很多，比如：
+
+1）**生产者/消费者协作模式**：这是一种常见的协作模式，生产者线程和消费者线程通过共享队列进行协作。
+
+2）**同时开始**：类似运动员比赛，在听到比赛开始枪响后同时开始，在一些程序，尤其是模拟仿真程序中，
+要求多个线程能同时开始。
+
+3）**等待结束**：主从协作模式也是一种常见的协作模式，主线程将任务分解为若干子任务，为每个子任务创建一个线程，主线程在继续执行其他任务之前需要等待每个子任务执行完毕。
+
+4）**异步结果**：在主从协作模式中，主线程手工创建子线程的写法往往比较麻烦，一种常见的模式是将子线程的管理封装为异步调用，异步调用马上返回，但返回的不是最终的结果，而是一个一般称为Future的对象，通过它可以在随后获得最终的结果。
+
+5）**集合点**：类似于学校或公司组团旅游，在旅游过程中有若干集合点，比如出发集合点，每个人从不同地方来到集合点，所有人到齐后进行下一项活动，在一些程序，比如并行迭代计算中，每个线程负责一部分计算，然后在集合点等待其他线程完成，所有线程到齐后，交换数据和计算结果，再进行下一次迭代。
+
+##### 15.3.2 wait/notify
+
+Java的根父类是Object, Java在Object类而非Thread类中定义了一些线程协作的基本方法，使得每个对象都可以调用这些方法，这些方法有两类，一类是wait，另一类是notify。
+
+主要有两个wait方法：
+```java
+        public final void wait() throws InterruptedException
+        public final native void wait(long timeout) throws InterruptedException;
+```
+一个带时间参数，单位是毫秒，表示最多等待这么长时间，参数为0表示无限期等待；一个不带时间参数，表示无限期等待，实际就是调用wait(0)。在等待期间都可以被中断，如果被中断，会抛出InterruptedException。
+
+wait实际上做了什么呢？它在等待什么？上节我们说过，每个对象都有一把锁和等待队列，一个线程在进入synchronized代码块时，会尝试获取锁，如果获取不到则会把当前线程加入等待队列中，其实，除了用于锁的等待队列，每个对象还有另一个等待队列，表示条件队列，该队列用于线程间的协作。
+调用wait就会把当前线程放到条件队列上并阻塞，表示当前线程执行不下去了，它需要等待一个条件，这个条件它自己改变不了，需要其他线程改变。当其他线程改变了条件后，应该调用Object的notify方法：
+```java
+        public final native void notify();
+        public final native void notifyAll();
+```
+notify做的事情就是从条件队列中选一个线程，将其从队列中移除并唤醒，notifyAll和notify的区别是，它会移除条件队列中所有的线程并全部唤醒。
+
+wait/notify方法只能在synchronized代码块内被调用，如果调用wait/notify方法时，当前线程没有持有对象锁，会抛出异常java.lang.IllegalMonitor-StateException。
+
+虽然是在synchronized方法内，但调用wait时，线程会释放对象锁。   
+wait的具体过程是：   
+1）把当前线程放入条件等待队列，释放对象锁，阻塞等待，线程状态变为WAITING或TIMED_WAITING。   
+2）等待时间到或被其他线程调用notify/notifyAll从条件队列中移除，这时，要重新竞争对象锁：
+- 如果能够获得锁，线程状态变为RUNNABLE，并从wait调用中返回。   
+- 否则，该线程加入对象锁等待队列，线程状态变为BLOCKED，只有在获得锁后才会从wait调用中返回。
+
+线程从wait调用中返回后，不代表其等待的条件就一定成立了，它需要重新检查其等待的条件。
+
+我们在设计多线程协作时，需要想清楚协作的共享变量和条件是什么，这是协作的核心。
+
+##### 15.3.3 生产者/消费者模式
+
+只能有一个条件等待队列，这是Java wait/notify机制的局限性，这使得对于等待条件的分析变得复杂。
+
+##### 15.3.4 同时开始
+看demo
+
+##### 15.3.5 等待结束
+看demo
+
+##### 15.3.6 异步结果
+看demo
+
+##### 15.3.7 集合点
+
+#### 15.4 线程的中断
+
+##### 15.4.1 取消/关闭的场景
+
+##### 15.4.2 取消/关闭的机制
+
+##### 15.4.3 线程对中断的反应
+
+线程的6个状态下，对中断位的响应：
+- `RUNNABLE`：且没有IO操作，可以设置中断标志位，子线程可以检查中断位进行自主结束；
+- `WAITING/TIMED_WAITING`：对线程对象调用interrupt()会使得该线程抛出InterruptedException。需要注意的是，抛出异常后，中断标志位会被清空，而不是被设置。此状态，子线程，需要捕获 InterruptedException，然后进行处理， 再重新设置中断位，
+最后再结束线程或其他操作。
+- `BLOCKED`：如果线程在等待锁，对线程对象调用interrupt()只是会设置线程的中断标志位，线程依然会处于BLOCKED状态，也就是说，interrupt()并不能使一个在等待锁的线程真正“中断”。在使用synchronized关键字获取锁的过程中不响应中断请求，这是synchronized的局限性。如果这对程序是一个问题，应该使用显式锁。
+- `NEW/TERMINATE`：如果线程尚未启动（NEW），或者已经结束（TERMINATED），则调用interrupt()对它没有任何效果，中断标志位也不会被设置。
+
+##### 15.4.4 如何正确地取消/关闭线程
+
+interrupt方法不一定会真正“中断”线程，它只是一种协作机制，如果不明白线程在做什么，不应该贸然地调用线程的interrupt方法，以为这样就能取消线程。
+
+对于以线程提供服务的程序模块而言，它应该封装取消/关闭操作，提供单独的取消/关闭方法给调用者，外部调用者应该调用这些方法而不是直接调用interrupt。
+
+Java并发库的一些代码就提供了单独的取消/关闭方法。
+
+### 第 16 章 并发包的基石
+
+#### 16.1 原子变量和CAS
+
+delta
+
+#### 16.2 显式锁
+
+#### 16.3 显式条件
+
+### 第 17 章 并发容器
+
+#### 17.1 写时复制的 List 和 Set
+
+##### 17.1.1 CopyOnWriteArrayList
+
+CopyOnWriteArrayList实现了List接口，它的用法与其他List（如ArrayList）基本是一样的。
+
+
+
+CopyOnWriteArrayList的特点如下：
+- 它是线程安全的，可以被多个线程并发访问；
+- 它的迭代器不支持修改操作，但也不会抛出ConcurrentModificationException；
+- 它以原子方式支持一些复合操作。
+
+
+
+CopyOnWriteArrayList的内部也是一个数组，但这个数组是以原子方式被整体更新的。每次修改操作，都会新建一个数组，复制原数组的内容到新数组，在新数组上进行需要的修改，然后以原子方式设置内部的数组引用，这就是写时复制。
+
+
+
+所有的读操作，都是先拿到当前引用的数组，然后直接访问该数组。在读的过程中，可能内部的数组引用已经被修改了，但不会影响读操作，它依旧访问原数组内容。
+
+
+
+换句话说，数组内容是只读的，写操作都是通过新建数组，然后原子性地修改数组引用来实现的。
+
+
+
+在CopyOnWriteArrayList中，读不需要锁，可以并行，读和写也可以并行，但多个线程不能同时写，每个写操作都需要先获取锁。
+CopyOnWriteArrayList内部使用Reentrant-Lock。
+
+
+
+每次修改都要创建一个新数组，然后复制所有内容，这听上去是一个难以令人接受的方案，如果数组比较大，修改操作又比较频繁，可以想象，CopyOnWriteArrayList的性能是很低的。
+
+事实确实如此，CopyOnWriteArrayList不适用于数组很大且修改频繁的场景。它是以优化读操作为目标的，读不需要同步，性能很高 ，但在优化读的同时牺牲了写的性能。
+
+
+
+##### 17.1.2 CopyOnWriteArraySet
+
+CopyOnWriteArraySet实现了Set接口，不包含重复元素，使用比较简单，我们就不赘述了。
+
+CopyOnWriteArraySet内部是通过CopyOnWriteArrayList实现的。
+
+简单总结下，CopyOnWriteArrayList和CopyOnWriteArraySet适用于读远多于写、集合不太大的场合，它们采用了写时复制。
+
+#### 17.2 ConcurrentHashMap
+
+常用的并发容器ConcurrentHashMap，它是HashMap的并发版本，与HashMap相比，
+它有如下特点：   
+- 并发安全；
+- 直接支持一些原子复合操作；
+- 支持高并发，读操作完全并行，写操作支持一定程度的并行；
+- 与同步容器Collections.synchronizedMap相比，迭代不用加锁，不会抛出Concurre ntModificationException；
+- 弱一致性。
+
+##### 17.2.1 并发安全
+
+##### 17.2.2 原子复合操作
+
+除了Map接口，ConcurrentHashMap还实现了一个接口ConcurrentMap，接口定义了一些条件更新操作。
+
+##### 17.2.3 高并发的基本机制
+
+ConcurrentHashMap是为高并发设计的，它是怎么做的呢？具体实现比较复杂，我们简要介绍其思路，在Java 7中，主要有两点： 1、分段锁；2、读不需要锁。
+
+Java 8对ConcurrentHashMap的实现进一步做了优化。首先，与HashMap的改进类似，在哈希冲突比较严重的时候，会将单向链表转化为平衡的排序二叉树，提高查找的效率；其次，锁的粒度进一步细化了，以提高并行性，哈希表数组中的每个位置（指向一个单链表或树）都有一个单独的锁。
+
+
+
+##### 17.2.4 迭代安全
+
+ConcurrentHashMap没有这个问题，在迭代器创建后，在迭代过程中，如果另一个线程对容器进行了修改，迭代会继续，不会抛出异常。
+
+##### 17.2.5 弱一致性
+
+ConcurrentHashMap的迭代器创建后，就会按照哈希表结构遍历每个元素，但在遍历过程中，内部元素可能会发生变化，如果变化发生在已遍历过的部分，迭代器就不会反映出来，而如果变化发生在未遍历过的部分，迭代器就会发现并反映出来，这就是弱一致性。
+
+##### 17.2.6 小结
+
+本节介绍了ConcurrentHashMap，它是并发版的HashMap，通过降低锁的粒度和CAS等实现了高并发，支持原子条件更新操作，
+不会抛出ConcurrentModificationException，实现了弱一致性。
+
+Java中没有并发版的HashSet，但可以通过Collections.newSetFromMap方法基于Con-currentHashMap构建一个。
+
+我们知道HashMap/HashSet基于哈希，不能对元素排序，对应的可排序的容器类是TreeMap/TreeSet，并发包中可排序的对应版本不是基于树，而是基于Skip List（跳跃表），类分别是ConcurrentSkipListMap和ConcurrentSkipListSet。
+
+
+
+### 第 18 章 异步任务执行服务
+
+#### 18.1 基本概念和原理
+
+##### 18.1.1 基本接口
+
+任务执行服务涉及的基本接口：
+
+- Runnable 和 Callable：表示要执行的异步任务。
+- Executor 和 ExecutorService：表示执行服务。
+- Future：表示异步任务的结果。
+
+Executor 表示最简单的执行服务，其定义为：
+
+```Java
+        public interface Executor {
+            void execute(Runnable command);
+        }
+```
+
+
+
+ExecutorService 扩展了 Executor，定义了更多服务，基本方法有：
+
+```Java
+        public interface ExecutorService extends Executor {
+            <T> Future<T> submit(Callable<T> task);
+            <T> Future<T> submit(Runnable task, T result);
+            Future<? > submit(Runnable task);
+            //... 其他方法
+        }
+```
+
+这三个 submit 都表示提交一个任务，返回值类型都是 Future，返回后，只是表示任务已提交，不代表已执行，通过Future可以查询异步任务的状态、获取最终结果、取消任务等。
+
+
+
+Future接口的定义：
+
+```Java
+        public interface Future<V> {
+            boolean cancel(boolean mayInterruptIfRunning);
+            boolean isCancelled();
+            boolean isDone();
+            V get() throws InterruptedException, ExecutionException;
+            V get(long timeout, TimeUnit unit) throws InterruptedException,
+                ExecutionException, TimeoutException;
+        }
+```
+
+get 用于返回异步任务最终的结果，如果任务还未执行完成，会阻塞等待，另一个 get 方法可以限定阻塞等待的时间，如果超时任务还未结束，会抛出 TimeoutException。
+
+
+
+我们再来看下 get 方法，任务最终大概有三种结果：
+
+1）正常完成，get 方法会返回其执行结果，如果任务是 Runnable 且没有提供结果，返回null。
+
+2）任务执行抛出了异常，get 方法会将异常包装为 ExecutionException 重新抛出，通过异常的 getCause 方法可以获取原异常。
+
+3）任务被取消了，get 方法会抛出异常 CancellationException。如果调用 get 方法的线程被中断了，get 方法会抛出InterruptedException。
+
+
+
+Future 是一个重要的概念，是实现“任务的提交”与“任务的执行”相分离的关键，是其中的“纽带”，任务提交者和任务执行服务通过它隔离各自的关注点，同时进行协作。
+
+
+
+##### 18.1.2 基本用法
+
+```java
+public class ChapterEighteenth {
+    static class Task implements Callable<Integer> {
+        @Override
+        public Integer call() throws Exception {
+            int sleepSeconds = new Random().nextInt(10000);
+            Thread.sleep(sleepSeconds);
+            return sleepSeconds;
+        }
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Future<Integer> future = executor.submit(new Task());
+        // 模拟执行其他任务
+        Thread.sleep(1000);
+        System.out.println("main thread do something......");
+        try {
+            System.out.println("call()......start");
+            System.out.println(future.get());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        executor.shutdown();
+    }
+}
+```
+
+
+
+ExecutorService 的其他方法：
+
+```java
+public interface ExecutorService extends Executor {
+    void shutdown();
+    List<Runnable> shutdownNow();
+    boolean isShutdown();
+    boolean isTerminated();
+    boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException;
+    <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException;
+    <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks,long timeout, TimeUnit unit) throws InterruptedException;
+    <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException;
+    <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException;
+}
+```
+
+有两个关闭方法：shutdown 和 shutdownNow。区别是：
+
+- shutdown 表示不再接受新任务，但已提交的任务会继续执行，即使任务还未开始执行；
+- shutdownNow不仅不接受新任务，而且会终止已提交但尚未执行的任务，对于正在执行的任务，一般会调用线程的interrupt方法尝试中断，不过，线程可能不响应中断，shutdownNow会返回已提交但尚未执行的任务列表。
+
+
+
+shutdown 和 shutdownNow 不会阻塞等待，它们返回后不代表所有任务都已结束，不过 isShutdown 方法会返回true。调用者可以通过awaitTermination等待所有任务结束，它可以限定等待的时间，如果超时前所有任务都结束了，即isTerminated方法返回true，则返回true，否则返回false。
+
+
+
+ExecutorService有两组批量提交任务的方法：invokeAll和invokeAny，它们都有两个版本，其中一个限定等待时间。
+
+
+
+invokeAll等待所有任务完成，返回的Future列表中，每个Future的isDone方法都返回true，不过isDone为true不代表任务就执行成功了，可能是被取消了。invokeAll可以指定等待时间，如果超时后有的任务没完成，就会被取消。
+
+
+
+而对于invokeAny，只要有一个任务在限时内成功返回了，它就会返回该任务的结果，其他任务会被取消；如果没有任务能在限时内成功返回，抛出TimeoutException；如果限时内所有任务都结束了，但都发生了异常，抛出ExecutionException。
+
+
+
+使用ExecutorService，编写并发异步任务的代码就像写顺序程序一样，不用关心线程的创建和协调，只需要提交任务、处理结果就可以了，大大简化了开发工作。
+
+
+
+##### 18.1.3 基本实现原理
+
+ExecutorService 的主要实现类是 ThreadPoolExecutor，它是基于线程池实现的。
+
+ExecutorService有一个抽象实现类AbstractExecutorService，本节，我们简要分析其原理，并基于它实现一个简单的ExecutorService。
+
+
+
+Future的主要实现类是FutureTask。
+
+**1. AbstractExecutorService**
+
+AbstractExecutorService提供了submit、invokeAll和invokeAny的默认实现，子类需要实现其他方法。
+
+submit/invokeAll/invokeAny最终都会调用execute, execute决定了到底如何执行任务。
+
+ExecutorService最基本的方法是submit，它是如何实现的呢？我们来看AbstractExecutor-Service的代码（基于Java 7）：
+
+```java
+        public <T> Future<T> submit(Callable<T> task) {
+            if(task == null) throw new NullPointerException();
+            RunnableFuture<T> ftask = newTaskFor(task);
+            execute(ftask);
+            return ftask;
+        }
+```
+
+它调用newTaskFor生成了一个RunnableFuture, RunnableFuture是一个接口，既扩展了Runnable，又扩展了Future，没有定义新方法，作为Runnable，它表示要执行的任务，传递给execute方法进行执行，作为Future，它又表示任务执行的异步结果。这可能令人混淆，我们来看具体代码：
+
+```java
+        protected <T> RunnableFuture<T> newTaskFor(Callable<T> callable) {
+            return new FutureTask<T>(callable);
+        }
+```
+
+就是创建了一个FutureTask对象，FutureTask实现了RunnableFuture接口。它是怎么实现的呢？我们接下来看（基于Java 7）。
+
+**2. FutureTask**
+
+它有一个成员变量表示待执行的任务，声明为：
+
+```java
+        private Callable<V> callable;
+```
+
+有个整数变量state表示状态，声明为：
+
+```java
+        NEW            = 0; //刚开始的状态，或任务在运行
+        COMPLETING   = 1; //临时状态，任务即将结束，在设置结果
+        NORMAL        = 2; //任务正常执行完成
+        EXCEPTIONAL  = 3; //任务执行抛出异常结束
+        CANCELLED     = 4; //任务被取消
+        INTERRUPTING = 5; //任务在被中断
+        INTERRUPTED  = 6; //任务被中断
+```
+
+有个变量表示最终的执行结果或异常，声明为：
+
+```java
+        private Object outcome;
+```
+
+有个变量表示运行任务的线程：
+
+```java
+        private volatile Thread runner;
+```
+
+还有个单向链表表示等待任务执行结果的线程：
+
+```java
+        private volatile WaitNode waiters;
+```
+
+FutureTask的构造方法会初始化callable和状态，如果FutureTask接受的是一个Runnable对象，它会调用Executors.callable转换为Callable对象，如下所示：
+
+```Java
+        public FutureTask(Runnable runnable, V result) {
+            this.callable = Executors.callable(runnable, result);
+            this.state = NEW;         //ensure visibility of callable
+        }
+```
+
+任务执行服务会使用一个线程执行FutureTask的run方法。run方法的代码为：
+
+```Java
+public void run() {
+    if(state ! = NEW ||
+        !UNSAFE.compareAndSwapObject(this, runnerOffset,
+                                      null, Thread.currentThread()))
+        return;
+    try {
+        Callable<V> c = callable;
+        if(c ! = null && state == NEW) {
+            V result;
+            boolean ran;
+            try {
+                result = c.call();
+                ran = true;
+            } catch (Throwable ex) {
+                result = null;
+                ran = false;
+                setException(ex);
+            }
+            if(ran)
+                set(result);
+        }
+    } finally {
+        //runner must be non-null until state is settled to
+        //prevent concurrent calls to run()
+        runner = null;
+        //state must be re-read after nulling runner to prevent
+        //leaked interrupts
+        int s = state;
+        if(s >= INTERRUPTING)
+            handlePossibleCancellationInterrupt(s);
+    }
+}
+```
+
+其基本逻辑是：
+
+1）调用callable的call方法，捕获任何异常；
+
+2）如果正常执行完成，调用set设置结果，保存到outcome；
+
+3）如果执行过程发生异常，调用setException设置异常，异常也是保存到outcome，但状态不一样；
+
+4）set和setException除了设置结果、修改状态外，还会调用finishCompletion，它会唤醒所有等待结果的线程。
+
+
+
+对于任务提交者，它通过get方法获取结果，限时get方法的代码为：
+
+```Java
+        public V get(long timeout, TimeUnit unit)
+            throws InterruptedException, ExecutionException, TimeoutException {
+            if(unit == null)
+                throw new NullPointerException();
+            int s = state;
+            if(s <= COMPLETING &&
+                (s = awaitDone(true, unit.toNanos(timeout))) <= COMPLETING)
+                throw new TimeoutException();
+            return report(s);
+        }
+```
+
+其基本逻辑是：如果任务还未执行完毕，就等待，最后调用report报告结果， report根据状态返回结果或抛出异常，代码为：
+
+```Java
+        private V report(int s) throws ExecutionException {
+            Object x = outcome;
+            if(s == NORMAL)
+                return (V)x;
+            if(s >= CANCELLED)
+                throw new CancellationException();
+            throw new ExecutionException((Throwable)x);
+        }
+```
+
+cancel方法的代码为：
+
+```Java
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            if(state ! = NEW)
+                return false;
+            if(mayInterruptIfRunning) {
+                if(! UNSAFE.compareAndSwapInt(this, stateOffset, NEW, INTERRUPTING))
+                    return false;
+                Thread t = runner;
+                if(t ! = null)
+                    t.interrupt();
+                UNSAFE.putOrderedInt(this, stateOffset, INTERRUPTED); // final state
+            }
+            else if(! UNSAFE.compareAndSwapInt(this, stateOffset, NEW, CANCELLED))
+                return false;
+            finishCompletion();
+            return true;
+        }
+```
+
+其基本逻辑为：
+
+- 如果任务已结束或取消，返回false；
+- 如果mayInterruptIfRunning为true，调用interrupt中断线程，设置状态为INTERR-UPTED；
+- 如果mayInterruptIfRunning为false，设置状态为CANCELLED；
+- 调用finishCompletion唤醒所有等待结果的线程。
+
+##### 18.1.4 小结
+
+本节介绍了Java并发包中任务执行服务的基本概念和原理，该服务体现了并发异步开发中“关注点分离”的思想，使用者只需要通过ExecutorService提交任务，通过Future操作任务和结果即可，不需要关注线程创建和协调的细节。
+
+
+
+#### 18.2 线程池
+
+线程池是并发程序中一个非常重要的概念和技术。线程池，顾名思义，就是一个线程的池子，里面有若干线程，它们的目的就是执行提交给线程池的任务，执行完一个任务后不会退出，而是继续等待或执行新任务。线程池主要由两个概念组成：一个是任务队列；另一个是工作者线程。工作者线程主体就是一个循环，循环从队列中接受任务并执行，任务队列保存待执行的任务。
+
+
+
+线程池的优点是显而易见的：
+
+- 它可以重用线程，避免线程创建的开销。
+
+- 任务过多时，通过排队避免创建过多线程，减少系统资源消耗和竞争，确保任务有序完成。
+
+
+
+Java并发包中线程池的实现类是ThreadPoolExecutor，它继承自AbstractExecutor-Service，实现了ExecutorService。
+
+ThreadPoolExecutor有一些重要的参数，理解这些参数对于合理使用线程池非常重要。
+
+
+
+##### 18.2.1 理解线程池
+
+先来看ThreadPoolExecutor的构造方法。ThreadPoolExecutor有多个构造方法，都需要一些参数，主要构造方法有：
+
+```Java
+        public ThreadPoolExecutor(int corePoolSize, int maximumPoolSize,
+              long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue)
+        public ThreadPoolExecutor(int corePoolSize, int maximumPoolSize,
+              long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue,
+              ThreadFactory threadFactory, RejectedExecutionHandler handler)
+```
+
+第二个构造方法多了两个参数threadFactory和handler，这两个参数一般不需要，第一个构造方法会设置默认值。参数corePoolSize、maximumPoolSize、keepAliveTime、unit用于控制线程池中线程的个数，workQueue表示任务队列，threadFactory用于对创建的线程进行一些配置，handler表示任务拒绝策略。
+
+
+
+**1. 线程池大小**
+
+线程池的大小主要与4个参数有关：
+
+- corePoolSize：核心线程个数。
+- maximumPoolSize：最大线程个数。
+- keepAliveTime和unit：空闲线程存活时间。
+
+maximumPoolSize表示线程池中的最多线程数，线程的个数会动态变化，但这是最大值，不管有多少任务，都不会创建比这个值大的线程个数。
+
+corePoolSize表示线程池中的核心线程个数，不过，并不是一开始就创建这么多线程，刚创建一个线程池后，实际上并不会创建任何线程。
+
+
+
+一般情况下，有新任务到来的时候，如果当前线程个数小于corePoolSiz，就会创建一个新线程来执行该任务，需要说明的是，即使其他线程现在也是空闲的，也会创建新线程。
+
+不过，如果线程个数大于等于corePoolSiz，那就不会立即创建新线程了，它会先尝试排队，需要强调的是，它是“尝试”排队，而不是“阻塞等待”入队，如果队列满了或其他原因不能立即入队，它就不会排队，而是检查线程个数是否达到了maximumPoolSize，如果没有，就会继续创建线程，直到线程数达到maximumPoolSize。
+
+
+
+keepAliveTime的目的是为了释放多余的线程资源，它表示，当线程池中的线程个数大于corePoolSize时额外空闲线程的存活时间。也就是说，一个非核心线程，在空闲等待新任务时，会有一个最长等待时间，即keepAliveTime，如果到了时间还是没有新任务，就会被终止。
+
+如果该值为0，则表示所有线程都不会超时终止。
+
+
+
+这几个参数除了可以在构造方法中进行指定外，还可以通过getter/setter方法进行查看和修改。
+
+
+
+除了这些静态参数，ThreadPoolExecutor还可以查看关于线程和任务数的一些动态数字：
+
+```Java
+        //返回当前线程个数
+        public int getPoolSize()
+        //返回线程池曾经达到过的最大线程个数
+        public int getLargestPoolSize()
+        //返回线程池自创建以来所有已完成的任务数
+        public long getCompletedTaskCount()
+        //返回所有任务数，包括所有已完成的加上所有排队待执行的
+        public long getTaskCount()
+```
+
+
+
+**2. 队列**
+
+ThreadPoolExecutor要求的队列类型是阻塞队列BlockingQueue。
+
+我们在17.4节介绍过多种BlockingQueue，它们都可以用作线程池的队列，比如：
+
+- LinkedBlockingQueue：基于链表的阻塞队列，可以指定最大长度，但默认是无界的。
+- ArrayBlockingQueue：基于数组的有界阻塞队列。
+-  PriorityBlockingQueue：基于堆的无界阻塞优先级队列。
+-  SynchronousQueue：没有实际存储空间的同步阻塞队列。
+
+
+
+如果用的是无界队列，需要强调的是，线程个数最多只能达到corePoolSize，到达core-PoolSize后，新的任务总会排队，参数maximumPoolSize也就没有意义了。
+
+**3. 任务拒绝策略**
+
+如果队列有界，且maximumPoolSize有限，则当队列排满，线程个数也达到了maxi-mumPoolSize，这时，新任务来了，如何处理呢？此时，会触发线程池的任务拒绝策略。
+
+
+
+默认情况下，提交任务的方法（如execute/submit/invokeAll等）会抛出异常，类型为RejectedExecutionException。
+
+不过，拒绝策略是可以自定义的，ThreadPoolExecutor实现了4种处理方式。
+
+1）ThreadPoolExecutor.AbortPolicy：这就是默认的方式，抛出异常。
+
+2）ThreadPoolExecutor.DiscardPolicy：静默处理，忽略新任务，不抛出异常，也不执行。
+
+3）ThreadPoolExecutor.DiscardOldestPolicy：将等待时间最长的任务扔掉，然后自己排队。
+
+4）ThreadPoolExecutor.CallerRunsPolicy：在任务提交者线程中执行任务，而不是交给线程池中的线程执行。
+
+
+
+它们都是ThreadPoolExecutor的public静态内部类，都实现了RejectedExecutionHandler接口，这个接口的定义为：
+
+```Java
+        public interface RejectedExecutionHandler {
+            void rejectedExecution(Runnable r, ThreadPoolExecutor executor);
+        }
+```
+
+当线程池不能接受任务时，调用其拒绝策略的rejectedExecution方法。
+
+拒绝策略可以在构造方法中进行指定，也可以通过如下方法进行指定：
+
+```Java
+        public void setRejectedExecutionHandler(RejectedExecutionHandler handler)
+```
+
+默认的RejectedExecutionHandler是一个AbortPolicy实例，如下所示：
+
+```Java
+        private static final RejectedExecutionHandler defaultHandler =
+            new AbortPolicy();
+```
+
+而AbortPolicy的rejectedExecution实现就是抛出异常，如下所示：
+
+```Java
+        public void rejectedExecution(Runnable r, ThreadPoolExecutor e) {
+            throw new RejectedExecutionException("Task " + r.toString() +
+                                      " rejected from " + e.toString());
+        }
+```
+
+我们需要强调下，拒绝策略只有在队列有界，且maximumPoolSize有限的情况下才会触发。如果队列无界，服务不了的任务总是会排队，但这不一定是期望的结果，因为请求处理队列可能会消耗非常大的内存，甚至引发内存不够的异常。如果队列有界但maxi-mumPoolSize无限，可能会创建过多的线程，占满CPU和内存，使得任何任务都难以完成。所以，在任务量非常大的场景中，让拒绝策略有机会执行是保证系统稳定运行很重要的方面。
+
+
+
+**4. 线程工厂**
+
+线程池还可以接受一个参数：ThreadFactory。它是一个接口，定义为：
+
+```Java
+        public interface ThreadFactory {
+            Thread newThread(Runnable r);
+        }
+```
+
+这个接口根据Runnable创建一个Thread, ThreadPoolExecutor的默认实现是Executors类中的静态内部类DefaultThreadFactory，主要就是创建一个线程，给线程设置一个名称，设置daemon属性为false，设置线程优先级为标准默认优先级，线程名称的格式为：pool-<线程池编号>-thread-<线程编号>。
+
+如果需要自定义一些线程的属性，比如名称，可以实现自定义的ThreadFactory。
+
+**5. 关于核心线程的特殊配置**
+
+线程个数小于等于corePoolSize时，我们称这些线程为核心线程，默认情况下。
+
+-  核心线程不会预先创建，只有当有任务时才会创建。
+- 核心线程不会因为空闲而被终止，keepAliveTime参数不适用于它。
+
+不过，ThreadPoolExecutor有如下方法，可以改变这个默认行为。
+
+```Java
+        //预先创建所有的核心线程
+        public int prestartAllCoreThreads()
+        //创建一个核心线程，如果所有核心线程都已创建，则返回false
+        public boolean prestartCoreThread()
+        //如果参数为true，则keepAliveTime参数也适用于核心线程
+        public void allowCoreThreadTimeOut(boolean value)
+```
+
+
+
+##### 18.2.2 工厂类 Executors
+
+类Executors提供了一些静态工厂方法，可以方便地创建一些预配置的线程池，主要方法有：
+
+```Java
+        public static ExecutorService newSingleThreadExecutor()
+        public static ExecutorService newFixedThreadPool(int nThreads)
+        public static ExecutorService newCachedThreadPool()
+```
+
+newSingleThreadExecutor基本相当于调用：
+
+```Java
+        public static ExecutorService newSingleThreadExecutor() {
+            return new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, 
+                                          new LinkedBlockingQueue<Runnable>());
+        }
+```
+
+只使用一个线程，使用无界队列LinkedBlockingQueue，线程创建后不会超时终止，该线程顺序执行所有任务。该线程池适用于需要确保所有任务被顺序执行的场合。
+
+
+
+newFixedThreadPool的代码为：
+
+```Java
+        public static ExecutorService newFixedThreadPool(int nThreads) {
+            return new ThreadPoolExecutor(nThreads, nThreads, 0L,
+                        TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
+        }
+```
+
+使用固定数目的n个线程，使用无界队列LinkedBlockingQueue，线程创建后不会超时终止。和newSingleThreadExecutor一样，由于是无界队列，如果排队任务过多，可能会消耗过多的内存。
+
+
+
+newCachedThreadPool的代码为：
+
+```Java
+        public static ExecutorService newCachedThreadPool() {
+            return new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L,
+                        TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
+        }
+```
+
+它的corePoolSize为0, maximumPoolSize为Integer.MAⅩ_VALUE, keepAliveTime是60秒，队列为SynchronousQueue。它的含义是：当新任务到来时，如果正好有空闲线程在等待任务，则其中一个空闲线程接受该任务，否则就总是创建一个新线程，创建的总线程个数不受限制，对任一空闲线程，如果60秒内没有新任务，就终止。
+
+
+
+实际中，应该使用newFixedThreadPool还是newCachedThreadPool呢？
+
+在系统负载很高的情况下，newFixedThreadPool可以通过队列对新任务排队，保证有足够的资源处理实际的任务，而newCachedThreadPool会为每个任务创建一个线程，导致创建过多的线程竞争CPU和内存资源，使得任何实际任务都难以完成，这时， newFixedThreadPool更为适用。
+
+不过，如果系统负载不太高，单个任务的执行时间也比较短，newCachedThreadPool的效率可能更高，因为任务可以不经排队，直接交给某一个空闲线程。
+
+在系统负载可能极高的情况下，两者都不是好的选择，newFixedThreadPool的问题是队列过长，而newCachedThreadPool的问题是线程过多，这时，应根据具体情况自定义ThreadPoolExecutor，传递合适的参数。
+
+##### 18.2.3 线程池的死锁
+
+关于提交给线程池的任务，我们需要注意一种情况，就是任务之间有依赖，这种情况可能会出现死锁。比如任务A，在它的执行过程中，它给同样的任务执行服务提交了一个任务B，但需要等待任务B结束。
+
+
+
+如果任务A是提交给了一个单线程线程池，一定会出现死锁，A在等待B的结果，而B在队列中等待被调度。如果是提交给了一个限定线程个数的线程池，也有可能因线程数限制出现死锁。
+
+
+
+怎么解决这种问题呢？可以使用newCachedThreadPool创建线程池，让线程数不受限制。另一个解决方法是使用SynchronousQueue，它可以避免死锁，怎么做到的呢？对于普通队列，入队只是把任务放到了队列中，而对于SynchronousQueue来说，入队成功就意味着已有线程接受处理，如果入队失败，可以创建更多线程直到maximumPoolSize，如果达到了maximumPoolSize，会触发拒绝机制，不管怎么样，都不会死锁。
+
+##### 18.2.4 小结
+
+本节介绍了线程池的基本概念，详细探讨了其主要参数的含义，理解这些参数对于合理使用线程池是非常重要的，对于相互依赖的任务，需要注意避免出现死锁。
+
+ThreadPoolExecutor实现了生产者/消费者模式，工作者线程就是消费者，任务提交者就是生产者，线程池自己维护任务队列。当我们碰到类似生产者/消费者问题时，应该优先考虑直接使用线程池，而非“重新发明轮子”，应自己管理和维护消费者线程及任务队列。
+
+
+
+#### 18.3 定时任务的那些陷阱
+
+本节探讨定时任务，定时任务的应用场景是非常多的，比如：
+
+- 闹钟程序或任务提醒，指定时间叫床或在指定日期提醒还信用卡。
+-  监控系统，每隔一段时间采集下系统数据，对异常事件报警。
+-  统计系统，一般凌晨一定时间统计昨日的各种数据指标。
+
+
+
+在Java中，主要有两种方式实现定时任务：
+
+- 使用java.util包中的Timer和TimerTask。
+- 使用Java并发包中的ScheduledExecutorService。
+
+
+
+它们的基本用法都是比较简单的，但如果对它们没有足够的了解，则很容易陷入其中的一些陷阱。下面，我们就来介绍它们的用法、原理以及那些陷阱。
+
+##### 18.3.1 Timer 和 TimerTask
+
+
+
+
+
+
+
+
+
+### 第 19 章 同步和协作工具类
+
+#### 19.1 读写锁 ReentrantReadWriteLock
+
+
+
+#### 19.2 信号量 Semaphore
+
+
+
+#### 19.3 倒计时 CountDownLatch
+
+
+
+#### 19.4 循环栅栏 CyclicBarrier
+
+
+
+#### 19.5 理解 ThreadLocal
+
+
+
+### 第 20 章 并发总结
+
+
+
+## 第六部分 动态与函数式编程
+
+Java 的一些动态特性，包括反射、注解、动态代理、类加载器等。利用这些特性，可以优雅地实现一些灵活通用的功能，它们经常用于各种框架、库和系统程序中。
+
+
+
+### 第 21 章 反射
+
+2023-11-22（三）深圳晴
+
+#### 21.1 Class 类
+
+#### 21.2 应用示例
+
+#### 21.3 反射与泛型
+
+
+
+### 第 22 章 注解
+
+2023-11-23（四）深圳晴
+
+
+
+### 第 23 章 动态代理
+
+2023-11-24（五）深圳晴
+
+
+
+### 第 24 章 类加载机制
+
+2023-11-24（五）深圳晴
+
+启动类加载器，Bootstrap ClassLoader，
+
+拓展类加载器，Extension CLassLoader，
+
+应用程序类加载器，Application ClassLoader。
+
+
+
+### 第 25 章 正则表达式
+
+2023-11-25（六）深圳晴
+
+
+
+
+
+### 第 26 章 函数式编程
+
+2023-11-27（一）深圳晴
+
+#### 26.1 Lambda 表达式
+
+##### 26.1.1 通过接口传递代码
+
+接口常被用于传递代码。
+
+通过接口传递行为代码，就要传递一个实现了该接口的实例对象，在之前的章节中，最简洁的方式是使用匿名内部类。
+
+
+
+##### 26.1.2 Lambda 语法
+
+通过接口传递代码，使用匿名内部类：
+
+```Java
+        //列出当前目录下的所有扩展名为．txt的文件
+        File f = new File(".");
+        File[] files = f.listFiles(new FilenameFilter(){
+            @Override
+            public boolean accept(File dir, String name) {
+                if(name.endsWith(".txt")){
+                    return true;
+                }
+                return false;
+            }
+        });
+```
+
+Java 8 提供了一种新的紧凑的传递代码的语法：Lambda 语法：
+
+```Java
+        File f = new File(".");
+        File[] files = f.listFiles((File dir, String name) -> {
+            if(name.endsWith(".txt")) {
+                return true;
+            }
+            return false;
+        });
+```
+
+直接给出了方法的实现代码。
+
+Lambda 表达式由`->`分隔为两部分，前面是方法的参数，后面`{}`内是方法的代码。
+
+最终形式：
+
+```Java
+        File[] files = f.listFiles((dir, name) -> name.endsWith(".txt"));
+```
+
+
+
+##### 26.1.3 函数式接口
+
+Java 8 引入了函数式接口的概念，函数式接口也是接口，但只能有一个抽象方法。
+
+Lambda表达式可以赋值给函数式接口。
+
+```Java
+        FileFilter filter = path -> path.getName().endsWith(".txt");
+        FilenameFilter fileNameFilter = (dir, name) -> name.endsWith(".txt");
+        Comparator<File> comparator = (f1, f2) ->
+                            f1.getName().compareTo(f2.getName());
+        Runnable task = () -> System.out.println("hello world");
+```
+
+
+
+##### 26.1.4 预定义的函数式接口
+
+Java 8 定义了大量的预定义函数式接口，用于常见类型的代码传递，这些函数定义在包 `java.util.function`下。
+
+<img src="the_logic_of_java_programming.assets/image-20231127180721750.png" alt="image-20231127180721750" style="zoom:33%;" />
+
+
+
+
+
+## The End
+
+
+
+
+
 
 
 
