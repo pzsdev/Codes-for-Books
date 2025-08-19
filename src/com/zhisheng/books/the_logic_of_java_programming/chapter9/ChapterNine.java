@@ -1,4 +1,4 @@
-package com.zhisheng.books.the_logic_of_java_programming.c9;
+package com.zhisheng.books.the_logic_of_java_programming.chapter9;
 
 import java.util.*;
 

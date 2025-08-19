@@ -1,4 +1,4 @@
-package com.zhisheng.books.the_logic_of_java_programming.c7;
+package com.zhisheng.books.the_logic_of_java_programming.chapter7;
 
 import java.nio.charset.Charset;
 import java.util.*;

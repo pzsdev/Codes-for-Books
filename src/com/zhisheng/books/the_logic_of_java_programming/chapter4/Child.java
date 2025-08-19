@@ -1,4 +1,4 @@
-package com.zhisheng.books.the_logic_of_java_programming.c4;
+package com.zhisheng.books.the_logic_of_java_programming.chapter4;
 
 /**
  * TODO

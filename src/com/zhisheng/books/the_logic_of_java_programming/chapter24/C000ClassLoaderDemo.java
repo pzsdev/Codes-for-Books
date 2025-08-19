@@ -1,4 +1,4 @@
-package com.zhisheng.books.the_logic_of_java_programming.c24;
+package com.zhisheng.books.the_logic_of_java_programming.chapter24;
 
 /**
  * 类加载器演示

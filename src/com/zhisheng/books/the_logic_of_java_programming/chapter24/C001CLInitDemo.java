@@ -1,4 +1,4 @@
-package com.zhisheng.books.the_logic_of_java_programming.c24;
+package com.zhisheng.books.the_logic_of_java_programming.chapter24;
 
 /**
  * ClassLoader 的 loadClass 方法与 Class 的 forName 方法都可以加载类，它们有什么不同呢？
