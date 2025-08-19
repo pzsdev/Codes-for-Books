@@ -11,9 +11,17 @@ import java.util.*;
 public class ChapterEleven {
     public static void main(String[] args) {
         ChapterEleven chapterEleven = new ChapterEleven();
+
+        // 基本优先队列
 //        chapterEleven.PriorityQueueDemo();
+
+        // 有优先级的任务队列
 //        chapterEleven.taskQueueDemo();
+
+        // 输出
 //        chapterEleven.topKDemo();
+
+        // 输出中位数
         chapterEleven.getMedian();
     }
 
@@ -22,6 +30,11 @@ public class ChapterEleven {
         median.add(1);
         median.add(2);
         median.add(3);
+
+        median.add(31);
+        median.add(32);
+        median.add(33);
+        median.add(5);
         System.out.println(median.getM());
     }
 
@@ -83,10 +96,13 @@ public class ChapterEleven {
 
     private void PriorityQueueDemo() {
         Queue<Integer> queue = new PriorityQueue<>();
-        queue.offer(10);
-        queue.add(22);
+
+        queue.offer(10); // offer 队尾添加，满了返回 false
+        queue.add(22); // add 尾部添加，满了扔异常
+
         queue.addAll(Arrays.asList(11, 12, 34, 2, 7, 4, 15, 12, 8, 6, 19, 13));
 
+        // 遍历队列
         while (queue.peek() != null) {
             System.out.println(queue.poll());
         }
@@ -103,6 +119,7 @@ public class ChapterEleven {
         }
     }
 
+    // 任务优先队列
     private class Task {
         int priority;
         String name;
@@ -148,7 +165,10 @@ public class ChapterEleven {
         tasks.offer(new Task(20, "写日记"));
         tasks.offer(new Task(10, "看电视"));
         tasks.offer(new Task(100, "写代码"));
+        tasks.offer(new Task(110, "去自习室"));
+
         Task task = tasks.poll();
+
         while (task != null) {
             System.out.println("处理任务：" + task.getName() + ", 优先级：" + task.getPriority());
             task = tasks.poll();
@@ -174,6 +194,7 @@ public class ChapterEleven {
         }
 
         public void add(E e) {
+            // 没超过 k 个，直接添加进去
             if (p.size() < k) {
                 p.add(e);
                 return;
@@ -184,7 +205,7 @@ public class ChapterEleven {
                 // 小于 TopK 中的最小值，不用变
                 return;
             }
-            // 新元素替换掉原来的最小值成为 TopK 之一
+            // 大于等于 最小值，新元素替换掉原来的最小值成为 TopK 之一
             p.poll();
             p.add(e);
         }
@@ -203,10 +224,13 @@ public class ChapterEleven {
      */
     private void topKDemo() {
         TopK<Integer> topK = new TopK<>(5);
+
         topK.addAll(Arrays.asList(new Integer[]{
                 100, 1, 2, 6, 34, 9, 23, 21, 99, 0
         }));
+
         System.out.println(Arrays.toString(topK.toArray(new Integer[0])));
+
         System.out.println(topK.getKth());
     }
 }
